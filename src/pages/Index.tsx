@@ -4,9 +4,6 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import HeroSection from "../components/ecommerce/HeroSection";
 import FeaturedProducts from "../components/ecommerce/FeaturedProducts";
-import AboutBrand from "../components/ecommerce/AboutBrand";
-import CollectionsPreview from "../components/ecommerce/CollectionsPreview";
-import CustomerTestimonials from "../components/ecommerce/CustomerTestimonials";
 import EmailSubscription from "../components/ecommerce/EmailSubscription";
 import Footer from "../components/ecommerce/Footer";
 
@@ -27,18 +24,29 @@ const Index = () => {
           toggleActions: "play none none reverse"
         }
       });
+
+      // Enhanced stagger animation for product cards
+      gsap.from(".product-card", {
+        opacity: 0,
+        y: 100,
+        duration: 0.8,
+        ease: "power3.out",
+        stagger: 0.2,
+        scrollTrigger: {
+          trigger: ".products-grid",
+          start: "top 70%",
+          toggleActions: "play none none reverse"
+        }
+      });
     });
 
     return () => ctx.revert();
   }, []);
 
   return (
-    <div className="min-h-screen bg-white font-inter">
+    <div className="min-h-screen bg-white font-inter overflow-x-hidden">
       <HeroSection />
       <FeaturedProducts />
-      <AboutBrand />
-      <CollectionsPreview />
-      <CustomerTestimonials />
       <EmailSubscription />
       <Footer />
     </div>
