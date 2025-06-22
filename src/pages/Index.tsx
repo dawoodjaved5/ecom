@@ -1,15 +1,26 @@
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import HeroSection from "../components/ecommerce/HeroSection";
 import FeaturedProducts from "../components/ecommerce/FeaturedProducts";
-import EmailSubscription from "../components/ecommerce/EmailSubscription";
+import ProductFilters, { FilterState } from "../components/ecommerce/ProductFilters";
+import SearchBar from "../components/ecommerce/SearchBar";
+import CategoryGrid from "../components/ecommerce/CategoryGrid";
 import Footer from "../components/ecommerce/Footer";
 
 gsap.registerPlugin(ScrollTrigger);
 
 const Index = () => {
+  const [filters, setFilters] = useState<FilterState>({
+    category: "all",
+    priceRange: "all",
+    size: "all",
+    color: "all",
+    sortBy: "featured"
+  });
+  const [searchQuery, setSearchQuery] = useState("");
+
   useEffect(() => {
     // Initialize GSAP scroll animations
     const ctx = gsap.context(() => {
@@ -43,11 +54,36 @@ const Index = () => {
     return () => ctx.revert();
   }, []);
 
+  const handleFilterChange = (newFilters: FilterState) => {
+    setFilters(newFilters);
+    console.log("Filters applied:", newFilters);
+  };
+
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    console.log("Search query:", query);
+  };
+
+  const handleCategorySelect = (category: string) => {
+    setFilters(prev => ({ ...prev, category }));
+    console.log("Category selected:", category);
+  };
+
   return (
     <div className="min-h-screen bg-white font-inter overflow-x-hidden">
       <HeroSection />
-      <FeaturedProducts />
-      <EmailSubscription />
+      
+      <section className="py-8 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4">
+          <SearchBar onSearch={handleSearch} />
+          <CategoryGrid onCategorySelect={handleCategorySelect} />
+        </div>
+      </section>
+
+      <ProductFilters onFilterChange={handleFilterChange} />
+      
+      <FeaturedProducts filters={filters} searchQuery={searchQuery} />
+      
       <Footer />
     </div>
   );
