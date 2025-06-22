@@ -1,11 +1,13 @@
 
 import { Card, CardContent } from "@/components/ui/card";
+import { useNavigate } from "react-router-dom";
 
 interface Category {
   id: string;
   name: string;
   image: string;
   productCount: number;
+  route: string;
 }
 
 interface CategoryGridProps {
@@ -13,32 +15,42 @@ interface CategoryGridProps {
 }
 
 const CategoryGrid = ({ onCategorySelect }: CategoryGridProps) => {
+  const navigate = useNavigate();
+
   const categories: Category[] = [
     {
       id: "women",
       name: "Women's Wear",
       image: "https://images.unsplash.com/photo-1494790108755-2616c9a2c8d4?w=300&h=300&fit=crop&crop=center",
-      productCount: 150
+      productCount: 150,
+      route: "/women"
     },
     {
       id: "men",
       name: "Men's Wear",
       image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&h=300&fit=crop&crop=center",
-      productCount: 120
+      productCount: 120,
+      route: "/men"
     },
     {
       id: "accessories",
       name: "Accessories",
       image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=300&h=300&fit=crop&crop=center",
-      productCount: 80
+      productCount: 80,
+      route: "/accessories"
     },
     {
       id: "shoes",
       name: "Footwear",
       image: "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=300&h=300&fit=crop&crop=center",
-      productCount: 95
+      productCount: 95,
+      route: "/shoes"
     }
   ];
+
+  const handleCategoryClick = (category: Category) => {
+    navigate(category.route);
+  };
 
   return (
     <div className="max-w-6xl mx-auto mb-16">
@@ -48,7 +60,7 @@ const CategoryGrid = ({ onCategorySelect }: CategoryGridProps) => {
           <Card 
             key={category.id}
             className="group cursor-pointer overflow-hidden border-0 shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 bg-white rounded-2xl"
-            onClick={() => onCategorySelect(category.id)}
+            onClick={() => handleCategoryClick(category)}
           >
             <div className="relative overflow-hidden rounded-t-2xl">
               <img
