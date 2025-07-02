@@ -1,89 +1,88 @@
-
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Heart, ShoppingBag } from "lucide-react";
-
-interface Product {
-  id: number;
-  title: string;
-  category: string;
-  price: string;
-  originalPrice?: string;
-  image: string;
-}
+import { Card } from "@/components/ui/card";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { AdminProduct, isVariantAvailable } from "@/contexts/AdminContext";
 
 interface ProductCardProps {
-  product: Product;
+  product: AdminProduct;
 }
 
 const ProductCard = ({ product }: ProductCardProps) => {
+  const navigate = useNavigate();
+  const [imageError, setImageError] = useState(false);
+
+  // Get current image URL
+  const getCurrentImageUrl = () => {
+    if (imageError || !product.images?.[0]) {
+      return "/placeholder.svg";
+    }
+    return product.images[0];
+  };
+
+  // Check if any size is available
+  const hasAvailableStock = () => {
+    if (!product.sizes || product.sizes.length === 0) {
+      return product.quantity > 0;
+    }
+    return product.sizes.some(size => isVariantAvailable(product, size));
+  };
+
+  const handleProductClick = () => {
+    navigate(`/product/${product.id}`);
+  };
+
+  // Don't render if product is not active
+  if (!product.isActive) return null;
+
   return (
-    <Card className="group cursor-pointer overflow-hidden border-0 shadow-xl hover:shadow-2xl transition-all duration-700 transform hover:-translate-y-4 bg-white rounded-3xl">
-      <div className="relative overflow-hidden rounded-t-3xl">
+    <Card 
+      className="group cursor-pointer overflow-hidden border border-gray-200 hover:border-gray-300 transition-all duration-200 bg-white hover:shadow-lg"
+      onClick={handleProductClick}
+    >
+      {/* Product Image */}
+      <div className="relative aspect-[4/5] overflow-hidden bg-gray-50">
         <img
-          src={product.image}
+          src={getCurrentImageUrl()}
           alt={product.title}
-          className="w-full h-96 object-cover transition-transform duration-700 group-hover:scale-110"
+          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+          onError={() => setImageError(true)}
+          onLoad={() => setImageError(false)}
         />
         
-        {/* Gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-        
-        {/* Floating action buttons */}
-        <div className="absolute top-4 right-4 flex flex-col gap-2 transform translate-x-full group-hover:translate-x-0 transition-transform duration-500">
-          <Button 
-            size="icon"
-            className="bg-white/90 text-gray-800 hover:bg-white rounded-full shadow-lg backdrop-blur-sm h-10 w-10"
-          >
-            <Heart size={18} />
-          </Button>
-          <Button 
-            size="icon"
-            className="bg-white/90 text-gray-800 hover:bg-white rounded-full shadow-lg backdrop-blur-sm h-10 w-10"
-          >
-            <ShoppingBag size={18} />
-          </Button>
-        </div>
-        
-        {/* Category badge */}
-        <div className="absolute top-4 left-4">
-          <span className="text-xs font-semibold text-white bg-black/50 backdrop-blur-sm px-3 py-1 rounded-full">
-            {product.category}
-          </span>
-        </div>
-        
-        {/* Quick add button */}
-        <Button 
-          className="absolute bottom-4 left-1/2 transform -translate-x-1/2 translate-y-full group-hover:translate-y-0 transition-all duration-500 bg-white text-black hover:bg-gray-100 font-semibold px-6 py-2 rounded-full shadow-xl"
-        >
-          Quick Add
-        </Button>
+        {/* Out of stock overlay */}
+        {!hasAvailableStock() && (
+          <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
+            <span className="text-sm font-medium text-gray-500">OUT OF STOCK</span>
+          </div>
+        )}
+
+        {/* Sale badge if original price exists */}
+        {product.originalPrice && product.originalPrice > product.price && (
+          <div className="absolute top-3 left-3">
+            <span className="bg-black text-white text-sm font-medium px-3 py-1">
+              SALE
+            </span>
+          </div>
+        )}
       </div>
-      
-      <CardContent className="p-6 bg-gradient-to-b from-white to-gray-50">
-        <div className="mb-3">
-          <h3 className="font-bold text-xl text-gray-900 mb-2 group-hover:text-purple-600 transition-colors duration-300">
-            {product.title}
-          </h3>
-          <div className="flex items-center gap-2">
-            <span className="text-2xl font-bold text-gray-900">{product.price}</span>
-            {product.originalPrice && (
-              <span className="text-lg text-gray-500 line-through">{product.originalPrice}</span>
-            )}
-          </div>
-        </div>
+
+      {/* Product Info */}
+      <div className="p-6 space-y-3">
+        <h3 className="text-base font-medium text-gray-900 line-clamp-2 group-hover:text-gray-700 transition-colors leading-relaxed">
+          {product.title}
+        </h3>
         
-        {/* Progress bar for popularity */}
-        <div className="mt-4">
-          <div className="flex justify-between items-center mb-1">
-            <span className="text-xs text-gray-500">Popularity</span>
-            <span className="text-xs text-gray-700 font-medium">85%</span>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-1">
-            <div className="bg-gradient-to-r from-purple-500 to-pink-500 h-1 rounded-full" style={{width: '85%'}}></div>
-          </div>
+        <div className="flex items-center space-x-3">
+          <span className="text-xl font-semibold text-gray-900">
+            PKR {product.price.toLocaleString()}
+          </span>
+          {product.originalPrice && product.originalPrice > product.price && (
+            <span className="text-base text-gray-500 line-through">
+              PKR {product.originalPrice.toLocaleString()}
+            </span>
+          )}
         </div>
-      </CardContent>
+      </div>
     </Card>
   );
 };
