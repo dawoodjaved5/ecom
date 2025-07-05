@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { toast } from 'sonner';
+import { useAdmin } from '@/contexts/AdminContext';
 
 export interface CartItem {
   id: string;
@@ -41,6 +42,7 @@ export const useCart = () => {
 
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [cart, setCart] = useState<CartItem[]>([]);
+  const { addOrder, updateProductQuantities } = useAdmin();
 
   const addToCart = (item: Omit<CartItem, 'quantity'>) => {
     // Check if item is out of stock
@@ -118,9 +120,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     }
 
     try {
-      // For now, just clear the cart and show success
-      // TODO: Integrate with AdminContext to properly create orders and update inventory
-      console.log('Order data:', {
+      const order = {
         customerName: formData.customerName,
         customerEmail: formData.customerEmail,
         customerPhone: formData.customerPhone,
@@ -134,13 +134,14 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
           color: item.color,
         })),
         total: getCartTotal(),
-        paymentMethod: formData.paymentMethod,
-      });
-      
-      // Clear cart after successful order
+        status: 'pending',
+        paymentMethod: formData.paymentMethod === 'cash' ? 'Cash on Delivery' : formData.paymentMethod,
+        createdAt: new Date(),
+      };
+      await addOrder(order);
+      await updateProductQuantities(order.items);
       clearCart();
       toast.success("Order placed successfully!");
-      
       return true;
     } catch (error) {
       console.error('Failed to place order:', error);

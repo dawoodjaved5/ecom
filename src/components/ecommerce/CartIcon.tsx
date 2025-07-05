@@ -1,8 +1,7 @@
-
 import React from 'react';
 import { ShoppingBag } from 'lucide-react';
 import { Button } from "@/components/ui/button";
-import { useCart } from "@/contexts/CartContext";
+import { useCart } from "@/components/ecommerce/CartContext";
 import { useNavigate } from 'react-router-dom';
 
 const CartIcon = () => {

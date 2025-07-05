@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { getProductById } = useAdmin();
+  const { getProductById, loading } = useAdmin();
   const { addToCart } = useCart();
   
   const [product, setProduct] = useState<AdminProduct | null>(null);
@@ -21,34 +21,41 @@ const ProductDetail = () => {
   const [imageError, setImageError] = useState(false);
 
   useEffect(() => {
-    if (id) {
-      const foundProduct = getProductById(id);
-      if (foundProduct) {
-        setProduct(foundProduct);
-        // Auto-select first available size and color
-        if (foundProduct.sizes && foundProduct.sizes.length > 0) {
-          const availableSize = foundProduct.sizes.find(size => isVariantAvailable(foundProduct, size));
-          if (availableSize) setSelectedSize(availableSize);
-        }
-        if (foundProduct.colors && foundProduct.colors.length > 0) {
-          setSelectedColor(foundProduct.colors[0]);
-        }
-      } else {
-        navigate('/404');
+    if (!id) return;
+    if (loading) return; // Wait for products to load
+    const foundProduct = getProductById(id);
+    if (foundProduct) {
+      setProduct(foundProduct);
+      // Auto-select first available size and color
+      if (foundProduct.sizes && foundProduct.sizes.length > 0) {
+        const availableSize = foundProduct.sizes.find(size => isVariantAvailable(foundProduct, size));
+        if (availableSize) setSelectedSize(availableSize);
       }
+      if (foundProduct.colors && foundProduct.colors.length > 0) {
+        setSelectedColor(foundProduct.colors[0]);
+      }
+    } else {
+      // Only redirect to 404 if not loading and product not found
+      navigate('/404');
     }
-  }, [id, getProductById, navigate]);
+  }, [id, getProductById, navigate, loading]);
 
-  if (!product) {
+  if (loading || !product) {
     return (
       <div className="min-h-screen bg-white">
         <Header />
         <div className="flex items-center justify-center h-96">
           <div className="text-center">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-2">Product not found</h2>
-            <Button onClick={() => navigate('/')} variant="outline">
-              Back to Home
-            </Button>
+            {loading ? (
+              <span className="text-lg text-gray-500">Loading product...</span>
+            ) : (
+              <>
+                <h2 className="text-2xl font-semibold text-gray-900 mb-2">Product not found</h2>
+                <Button onClick={() => navigate('/')} variant="outline">
+                  Back to Home
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -56,10 +63,11 @@ const ProductDetail = () => {
   }
 
   const getCurrentImageUrl = () => {
-    if (imageError || !product.images?.[currentImageIndex]) {
+    const img = product.images?.[currentImageIndex];
+    if (imageError || !img) {
       return "/placeholder.svg";
     }
-    return product.images[currentImageIndex];
+    return typeof img === 'string' ? img : img.url;
   };
 
   const handleAddToCart = () => {
@@ -110,13 +118,14 @@ const ProductDetail = () => {
   return (
     <div className="min-h-screen bg-white">
       <Header />
-      
+      {/* Spacer to push content below sticky header */}
+      <div className="h-16" />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Back Button */}
         <Button 
           variant="ghost" 
           onClick={() => navigate(-1)}
-          className="mb-4 sm:mb-6 text-gray-600 hover:text-gray-900 p-2"
+          className="mb-4 sm:mb-6 text-gray-600 hover:text-gray-900 p-10"
         >
           <ChevronLeft size={20} className="mr-1" />
           Back
@@ -139,21 +148,24 @@ const ProductDetail = () => {
             {/* Thumbnail Images */}
             {product.images && product.images.length > 1 && (
               <div className="grid grid-cols-4 gap-2">
-                {product.images.map((image, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setCurrentImageIndex(index)}
-                    className={`aspect-square bg-gray-50 overflow-hidden border-2 transition-colors ${
-                      index === currentImageIndex ? 'border-gray-900' : 'border-gray-200'
-                    }`}
-                  >
-                    <img
-                      src={image}
-                      alt={`${product.title} ${index + 1}`}
-                      className="w-full h-full object-cover"
-                    />
-                  </button>
-                ))}
+                {product.images.map((image, index) => {
+                  const imgUrl = typeof image === 'string' ? image : image.url;
+                  return (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentImageIndex(index)}
+                      className={`aspect-square bg-gray-50 overflow-hidden border-2 transition-colors ${
+                        index === currentImageIndex ? 'border-gray-900' : 'border-gray-200'
+                      }`}
+                    >
+                      <img
+                        src={imgUrl}
+                        alt={`${product.title} ${index + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>

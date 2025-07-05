@@ -91,7 +91,7 @@ const Header = () => {
                 variant="ghost"
                 size="sm"
                 className="relative p-2 hover:bg-gray-100"
-                onClick={() => setIsCartOpen(true)}
+                onClick={() => navigate("/cart")}
               >
                 <ShoppingBag size={20} />
                 {getCartItemCount() > 0 && (

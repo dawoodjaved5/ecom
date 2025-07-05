@@ -1,7 +1,7 @@
-
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Heart, ShoppingBag } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface Product {
   id: number;
@@ -17,13 +17,24 @@ interface ProductCardProps {
 }
 
 const ProductCard = ({ product }: ProductCardProps) => {
+  const navigate = useNavigate();
+  // Calculate discount percentage
+  const price = Number(product.price);
+  const originalPrice = Number(product.originalPrice);
+  const hasDiscount = originalPrice > price;
+  const discountPercent = hasDiscount ? Math.round(((originalPrice - price) / originalPrice) * 100) : 0;
+
   return (
-    <Card className="group cursor-pointer overflow-hidden border-0 shadow-xl hover:shadow-2xl transition-all duration-700 transform hover:-translate-y-4 bg-white rounded-3xl">
-      <div className="relative overflow-hidden rounded-t-3xl">
+    <Card
+      className="group cursor-pointer overflow-hidden border-0 shadow-xl hover:shadow-2xl transition-all duration-700 transform hover:-translate-y-4 bg-white rounded-3xl"
+      onClick={() => navigate(`/product/${product.id}`)}
+    >
+      <div className="relative overflow-hidden rounded-t-3xl bg-gray-100">
         <img
-          src={product.image}
+          src={product.images?.[0] || "/placeholder-product.jpg"}
           alt={product.title}
           className="w-full h-96 object-cover transition-transform duration-700 group-hover:scale-110"
+          onError={e => { e.currentTarget.onerror = null; e.currentTarget.src = "/placeholder-product.jpg"; }}
         />
         
         {/* Gradient overlay */}
@@ -34,12 +45,14 @@ const ProductCard = ({ product }: ProductCardProps) => {
           <Button 
             size="icon"
             className="bg-white/90 text-gray-800 hover:bg-white rounded-full shadow-lg backdrop-blur-sm h-10 w-10"
+            onClick={e => e.stopPropagation()}
           >
             <Heart size={18} />
           </Button>
           <Button 
             size="icon"
             className="bg-white/90 text-gray-800 hover:bg-white rounded-full shadow-lg backdrop-blur-sm h-10 w-10"
+            onClick={e => e.stopPropagation()}
           >
             <ShoppingBag size={18} />
           </Button>
@@ -55,6 +68,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
         {/* Quick add button */}
         <Button 
           className="absolute bottom-4 left-1/2 transform -translate-x-1/2 translate-y-full group-hover:translate-y-0 transition-all duration-500 bg-white text-black hover:bg-gray-100 font-semibold px-6 py-2 rounded-full shadow-xl"
+          onClick={e => e.stopPropagation()}
         >
           Quick Add
         </Button>
@@ -70,17 +84,12 @@ const ProductCard = ({ product }: ProductCardProps) => {
             {product.originalPrice && (
               <span className="text-lg text-gray-500 line-through">{product.originalPrice}</span>
             )}
-          </div>
-        </div>
-        
-        {/* Progress bar for popularity */}
-        <div className="mt-4">
-          <div className="flex justify-between items-center mb-1">
-            <span className="text-xs text-gray-500">Popularity</span>
-            <span className="text-xs text-gray-700 font-medium">85%</span>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-1">
-            <div className="bg-gradient-to-r from-purple-500 to-pink-500 h-1 rounded-full" style={{width: '85%'}}></div>
+            {/* Discount percentage */}
+            {hasDiscount && (
+              <span className="ml-2 bg-red-100 text-red-600 px-2 py-1 rounded text-xs font-semibold">
+                {discountPercent}% OFF
+              </span>
+            )}
           </div>
         </div>
       </CardContent>

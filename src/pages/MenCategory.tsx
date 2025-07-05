@@ -29,9 +29,8 @@ const MenCategory = () => {
   // Filter products for men's category
   const menProducts = products.filter(product => 
     product.isActive && (
-      product.category.toLowerCase().includes('men') || 
-      product.category.toLowerCase().includes('male') ||
-      product.category.toLowerCase() === 'unisex'
+      product.category.toLowerCase() === 'men' ||
+      product.category.toLowerCase() === 'male'
     )
   );
 

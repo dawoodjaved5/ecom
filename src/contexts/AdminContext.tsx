@@ -19,7 +19,7 @@ export interface AdminProduct {
   price: number;
   originalPrice?: number;
   description: string;
-  images: string[];
+  images: { fileId: string; url: string }[];
   sizes: string[];
   colors: string[];
   quantity: number; // Total quantity (sum of all variants)
@@ -436,12 +436,12 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
   };
 
   // Upload images to Appwrite Storage
-  const uploadImages = async (files: File[]): Promise<string[]> => {
+  const uploadImages = async (files: File[]): Promise<{ fileId: string; url: string }[]> => {
     console.log('=== STARTING IMAGE UPLOAD ===');
     console.log('Files to upload:', files.length);
     console.log('Bucket ID:', BUCKET_ID);
     
-    const urls: string[] = [];
+    const uploaded: { fileId: string; url: string }[] = [];
     
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
@@ -473,50 +473,27 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
         console.log('✅ File uploaded successfully!');
         console.log('Upload response:', res);
         
-        // Try multiple URL generation methods for better compatibility
-        try {
-          // Method 1: getFileView (for images)
-          const url = storage.getFileView(BUCKET_ID, res.$id);
-          const urlString = url.toString();
-          urls.push(urlString);
-          
-          console.log('Generated URL (getFileView):', urlString);
-          console.log('File ID:', res.$id);
-          console.log('Bucket ID used:', BUCKET_ID);
-        } catch (urlErr) {
-          try {
-            // Method 2: getFilePreview as fallback
-            const previewUrl = storage.getFilePreview(BUCKET_ID, res.$id, 400, 400);
-            const previewUrlString = previewUrl.toString();
-            urls.push(previewUrlString);
-            console.log('Generated URL (getFilePreview):', previewUrlString);
-          } catch (previewErr) {
-                         console.error('Both URL generation methods failed:', urlErr, previewErr);
-             // Use a manual URL construction as last resort
-             const manualUrl = `https://fra.cloud.appwrite.io/v1/storage/buckets/${BUCKET_ID}/files/${res.$id}/view?project=685a704600120913310a`;
-             urls.push(manualUrl);
-             console.log('Using manual URL:', manualUrl);
-          }
-        }
-              } catch (err: any) {
-          console.error('❌ Image upload failed for file:', file.name);
-          console.error('Error details:', err);
-          console.error('Error message:', err.message);
-          console.error('Error code:', err.code);
-          console.error('Error type:', err.type);
-          toast.error('Image upload failed for ' + file.name + ': ' + (err.message || err.toString()));
-        }
+        const url = storage.getFileView(BUCKET_ID, res.$id).toString();
+        uploaded.push({ fileId: res.$id, url });
+      } catch (err: any) {
+        console.error('❌ Image upload failed for file:', file.name);
+        console.error('Error details:', err);
+        console.error('Error message:', err.message);
+        console.error('Error code:', err.code);
+        console.error('Error type:', err.type);
+        toast.error('Image upload failed for ' + file.name + ': ' + (err.message || err.toString()));
       }
-      
-      console.log('=== IMAGE UPLOAD COMPLETE ===');
-      console.log('Total URLs generated:', urls.length);
-      console.log('URLs:', urls);
-      
-      if (urls.length !== files.length) {
-        console.warn(`⚠️  Upload mismatch: ${files.length} files submitted, ${urls.length} URLs generated`);
-      }
-      
-      return urls;
+    }
+    
+    console.log('=== IMAGE UPLOAD COMPLETE ===');
+    console.log('Total URLs generated:', uploaded.length);
+    console.log('URLs:', uploaded.map(u => u.url));
+    
+    if (uploaded.length !== files.length) {
+      console.warn(`⚠️  Upload mismatch: ${files.length} files submitted, ${uploaded.length} URLs generated`);
+    }
+    
+    return uploaded;
   };
 
   // Add product to Appwrite
@@ -546,12 +523,14 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
           size: f.size,
           type: f.type
         })));
-        
         images = await uploadImages(productData.imageFiles);
         console.log('Final images URLs after upload:', images);
       } else {
         console.log('No image files to upload');
       }
+
+      // Convert images to array of URLs for Appwrite
+      const imageUrls = images.map(img => typeof img === 'string' ? img : img.url);
 
       // Prepare the document data
       const documentData = {
@@ -560,7 +539,7 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
         price: productData.price,
         originalPrice: productData.originalPrice || null,
         description: productData.description,
-        images: images,
+        images: imageUrls,
         sizes: productData.sizes,
         colors: productData.colors,
         quantity: productData.quantity,
@@ -595,7 +574,7 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
           price: doc.price,
           originalPrice: doc.originalPrice,
           description: doc.description,
-          images: doc.images,
+          images: doc.images.map(img => ({ fileId: img.fileId, url: img.url })),
           sizes: doc.sizes,
           colors: doc.colors,
           quantity: doc.quantity,
@@ -681,7 +660,7 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
           price: doc.price,
           originalPrice: doc.originalPrice,
           description: doc.description,
-          images: doc.images,
+          images: doc.images.map(img => ({ fileId: img.fileId, url: img.url })),
           sizes: doc.sizes,
           colors: doc.colors,
           quantity: doc.quantity,
@@ -706,6 +685,18 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
   // Delete product from Appwrite
   const deleteProduct = async (id: string) => {
     try {
+      const product = products.find(p => p.id === id);
+      if (product && product.images) {
+        for (const img of product.images) {
+          if (img.fileId) {
+            try {
+              await storage.deleteFile(BUCKET_ID, img.fileId);
+            } catch (e) {
+              console.warn('Failed to delete file from storage:', img.fileId, e);
+            }
+          }
+        }
+      }
       await databases.deleteDocument(DATABASE_ID, PRODUCTS_COLLECTION_ID, id);
       setProducts(prev => prev.filter(p => p.id !== id));
       toast.success('Product deleted!');
@@ -1188,14 +1179,12 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
       console.log('Adding cover image...');
       
       // Upload image
-      const imageUrls = await uploadImages([coverImageData.imageFile]);
-      if (imageUrls.length === 0) {
-        throw new Error('Failed to upload cover image');
-      }
+      const imageObjs = await uploadImages([coverImageData.imageFile]);
+      if (imageObjs.length === 0) throw new Error('Failed to upload cover image');
 
       // Create cover image document
       const docData = {
-        imageUrl: imageUrls[0],
+        imageUrl: typeof imageObjs[0] === 'string' ? imageObjs[0] : imageObjs[0].url,
         category: coverImageData.category,
         title: coverImageData.title || '',
         description: coverImageData.description || '',
@@ -1212,7 +1201,7 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
 
       const newCoverImage: CoverImage = {
         id: res.$id,
-        imageUrl: imageUrls[0],
+        imageUrl: typeof imageObjs[0] === 'string' ? imageObjs[0] : imageObjs[0].url,
         category: coverImageData.category,
         title: coverImageData.title || '',
         description: coverImageData.description || '',
@@ -1273,6 +1262,14 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
     }
 
     try {
+      const coverImage = coverImages.find(img => img.id === id);
+      if (coverImage && coverImage.imageUrl && coverImage.imageUrl.fileId) {
+        try {
+          await storage.deleteFile(BUCKET_ID, coverImage.imageUrl.fileId);
+        } catch (e) {
+          console.warn('Failed to delete cover image file from storage:', coverImage.imageUrl.fileId, e);
+        }
+      }
       await databases.deleteDocument(DATABASE_ID, COVER_IMAGES_COLLECTION_ID, id);
       setCoverImages(prev => prev.filter(img => img.id !== id));
       toast.success('Cover image deleted successfully!');

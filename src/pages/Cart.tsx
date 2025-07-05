@@ -1,10 +1,9 @@
-
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Minus, Plus, Trash2 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { useCart } from "@/contexts/CartContext";
+import { useCart } from "@/components/ecommerce/CartContext";
 
 const Cart = () => {
   const { state, updateQuantity, removeFromCart } = useCart();

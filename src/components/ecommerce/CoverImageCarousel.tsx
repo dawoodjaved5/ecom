@@ -106,7 +106,7 @@ const CoverImageCarousel: React.FC<CoverImageCarouselProps> = ({ coverImages }) 
         <img
           src={activeCoverImages[currentIndex].imageUrl}
           alt={`${activeCoverImages[currentIndex].category} collection`}
-          className="w-full h-auto max-h-[90vh] object-contain transition-opacity duration-300"
+          className="w-full h-auto max-h-[100vh] object-contain transition-opacity duration-300"
           onLoad={handleImageLoad}
           style={{ opacity: imageLoaded ? 1 : 0 }}
         />
