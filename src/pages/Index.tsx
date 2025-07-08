@@ -14,19 +14,19 @@ const Index = () => {
     return (
     <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-white">
       <Header />
-      <div className="pt-32">
+      <div className="mt-10 sm:mt-16 lg:mt-32">
         {/* Cover Image Carousel Section */}
         <CoverImageCarousel coverImages={coverImages} />
 
       {/* Categories Section */}
-      <section className="py-16 sm:py-20 lg:py-24 bg-gradient-to-br from-white via-purple-50/30 to-cyan-50/30 relative overflow-hidden">
+      <section className="py-8 sm:py-16 lg:py-24 bg-gradient-to-br from-white via-purple-50/30 to-cyan-50/30 relative overflow-hidden mt-0">
         {/* Background decorative elements */}
         <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 via-transparent to-cyan-500/5"></div>
         <div className="absolute top-0 left-1/4 w-64 h-64 bg-gradient-to-r from-purple-500/10 to-cyan-500/10 rounded-full blur-3xl"></div>
         <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-gradient-to-r from-cyan-500/10 to-purple-500/10 rounded-full blur-3xl"></div>
         
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="text-center mb-16 sm:mb-20">
+          <div className="text-center mb-8 sm:mb-16 lg:mb-20">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-100 to-cyan-100 text-purple-700 text-sm font-bold rounded-full mb-6 shadow-lg">
               <Sparkles size={16} className="text-purple-600" />
               Explore Collections

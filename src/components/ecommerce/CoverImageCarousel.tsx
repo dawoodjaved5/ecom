@@ -94,19 +94,19 @@ const CoverImageCarousel: React.FC<CoverImageCarouselProps> = ({ coverImages }) 
 
   return (
     <section 
-      className="relative w-full min-h-[500px] max-h-[70vh] overflow-hidden bg-gray-100 flex items-center justify-center"
+      className="relative w-full min-h-[220px] sm:min-h-[350px] lg:min-h-[500px] max-h-[40vh] sm:max-h-[60vh] lg:max-h-[70vh] overflow-hidden bg-gray-100 flex items-center justify-center"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
       {/* Cover Image */}
       <div 
-        className="relative w-full h-auto cursor-pointer transition-transform duration-500 hover:scale-105"
+        className="relative w-full h-full cursor-pointer transition-transform duration-500 hover:scale-105"
         onClick={() => handleImageClick(activeCoverImages[currentIndex].category)}
       >
         <img
           src={activeCoverImages[currentIndex].imageUrl}
           alt={`${activeCoverImages[currentIndex].category} collection`}
-          className="w-full h-auto max-h-[100vh] object-contain transition-opacity duration-300"
+          className="w-full h-full object-contain transition-opacity duration-300"
           onLoad={handleImageLoad}
           style={{ opacity: imageLoaded ? 1 : 0 }}
         />
