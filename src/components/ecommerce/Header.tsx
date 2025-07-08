@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ShoppingBag, Search, Menu, X, User } from "lucide-react";
+import { ShoppingBag, Search, Menu, X, User, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/components/ecommerce/CartContext";
 import CartDrawer from "./CartDrawer";
@@ -17,7 +17,6 @@ const Header = () => {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      console.log("Searching for:", searchQuery);
       setIsSearchOpen(false);
       setIsMobileMenuOpen(false);
     }
@@ -33,15 +32,18 @@ const Header = () => {
   return (
     <>
       {/* Main Header */}
-      <header className="fixed top-0 left-0 w-full z-50 bg-white border-b border-gray-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4">
+      <header className="fixed top-0 left-0 w-full z-50 bg-white/80 backdrop-blur-xl border-b border-gray-200/50 shadow-lg">
+        {/* Animated background gradient */}
+        <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 via-transparent to-cyan-500/5"></div>
+        
+        <div className="relative max-w-7xl mx-auto px-4">
           {/* Top Row - Mobile Menu, Brand, Cart */}
           <div className="flex items-center justify-between h-16">
             {/* Mobile Menu Button */}
             <Button
               variant="ghost"
               size="sm"
-              className="lg:hidden p-2 hover:bg-gray-100"
+              className="lg:hidden p-2 hover:bg-gradient-to-r hover:from-purple-50 hover:to-cyan-50 rounded-xl transition-all duration-300"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             >
               {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
@@ -51,13 +53,15 @@ const Header = () => {
             <div className="absolute left-1/2 transform -translate-x-1/2">
               <Link
                 to="/"
-                className="text-xl sm:text-2xl font-bold text-gray-900 tracking-wide hover:text-gray-700 transition-colors"
+                className="text-xl sm:text-2xl font-black bg-gradient-to-r from-purple-600 via-purple-800 to-cyan-600 bg-clip-text text-transparent tracking-wider hover:scale-105 transition-all duration-300 flex items-center gap-2"
                 onClick={() => {
                   setIsMobileMenuOpen(false);
                   setIsSearchOpen(false);
                 }}
               >
+                <Sparkles size={20} className="text-purple-600" />
                 OUTLAW
+                <Sparkles size={20} className="text-cyan-600" />
               </Link>
             </div>
 
@@ -67,35 +71,35 @@ const Header = () => {
               <Button
                 variant="ghost"
                 size="sm"
-                className="p-2 hover:bg-gray-100"
+                className="p-2 hover:bg-gradient-to-r hover:from-purple-50 hover:to-cyan-50 rounded-xl transition-all duration-300 hover:scale-110"
                 onClick={() => {
                   setIsSearchOpen(!isSearchOpen);
                   setIsMobileMenuOpen(false);
                 }}
               >
-                <Search size={20} />
+                <Search size={20} className="text-gray-700" />
               </Button>
 
               {/* Account Icon - Hidden on small screens */}
               <Button
                 variant="ghost"
                 size="sm"
-                className="hidden sm:flex p-2 hover:bg-gray-100"
+                className="hidden sm:flex p-2 hover:bg-gradient-to-r hover:from-purple-50 hover:to-cyan-50 rounded-xl transition-all duration-300 hover:scale-110"
                 onClick={() => navigate("/admin")}
               >
-                <User size={20} />
+                <User size={20} className="text-gray-700" />
               </Button>
 
               {/* Cart Icon */}
               <Button
                 variant="ghost"
                 size="sm"
-                className="relative p-2 hover:bg-gray-100"
+                className="relative p-2 hover:bg-gradient-to-r hover:from-purple-50 hover:to-cyan-50 rounded-xl transition-all duration-300 hover:scale-110"
                 onClick={() => navigate("/cart")}
               >
-                <ShoppingBag size={20} />
+                <ShoppingBag size={20} className="text-gray-700" />
                 {getCartItemCount() > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-gray-900 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
+                  <span className="absolute -top-1 -right-1 bg-gradient-to-r from-purple-600 to-cyan-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold shadow-lg animate-pulse">
                     {getCartItemCount()}
                   </span>
                 )}
@@ -105,29 +109,33 @@ const Header = () => {
 
           {/* Search Bar - Expandable on mobile and desktop */}
           {isSearchOpen && (
-            <div className="pb-4 border-t border-gray-100">
+            <div className="pb-4 border-t border-gray-200/50">
               <form onSubmit={handleSearch} className="max-w-md mx-auto pt-4">
-                <Input
-                  type="text"
-                  placeholder="Search products..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full h-12 text-base border-gray-300 focus:border-gray-900 focus:ring-0"
-                  autoFocus
-                />
+                <div className="relative">
+                  <Input
+                    type="text"
+                    placeholder="Search products..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full h-12 text-base border-2 border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 rounded-xl bg-white/80 backdrop-blur-sm transition-all duration-300"
+                    autoFocus
+                  />
+                  <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                </div>
               </form>
             </div>
           )}
 
           {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center justify-center space-x-8 py-4 border-t border-gray-100">
+          <nav className="hidden lg:flex items-center justify-center space-x-8 py-4 border-t border-gray-200/50">
             {categories.map((category) => (
               <Link
                 key={category.name}
                 to={category.path}
-                className="text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors duration-200 tracking-wide px-2 py-1"
+                className="text-sm font-bold text-gray-700 hover:text-purple-600 transition-all duration-300 tracking-wider px-4 py-2 rounded-xl hover:bg-gradient-to-r hover:from-purple-50 hover:to-cyan-50 relative group"
               >
                 {category.name}
+                <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-0 h-0.5 bg-gradient-to-r from-purple-600 to-cyan-600 group-hover:w-full transition-all duration-300"></div>
               </Link>
             ))}
           </nav>
@@ -135,13 +143,13 @@ const Header = () => {
 
         {/* Mobile Navigation */}
         {isMobileMenuOpen && (
-          <div className="lg:hidden bg-white border-t border-gray-200 shadow-lg">
+          <div className="lg:hidden bg-white/95 backdrop-blur-xl border-t border-gray-200/50 shadow-2xl">
             <nav className="px-4 py-6 space-y-1 max-h-96 overflow-y-auto">
               {categories.map((category) => (
                 <Link
                   key={category.name}
                   to={category.path}
-                  className="block text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 px-3 py-3 rounded-lg transition-colors duration-200"
+                  className="block text-base font-bold text-gray-700 hover:text-purple-600 hover:bg-gradient-to-r hover:from-purple-50 hover:to-cyan-50 px-4 py-3 rounded-xl transition-all duration-300"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   {category.name}
@@ -149,10 +157,10 @@ const Header = () => {
               ))}
               
               {/* Mobile-only links */}
-              <div className="border-t border-gray-200 pt-4 mt-4">
+              <div className="border-t border-gray-200/50 pt-4 mt-4">
                 <Link
                   to="/admin"
-                  className="block text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 px-3 py-3 rounded-lg transition-colors duration-200"
+                  className="block text-base font-bold text-gray-700 hover:text-purple-600 hover:bg-gradient-to-r hover:from-purple-50 hover:to-cyan-50 px-4 py-3 rounded-xl transition-all duration-300"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   ACCOUNT

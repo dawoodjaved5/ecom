@@ -18,7 +18,6 @@ export const CartDrawerProvider = ({ children }: { children: React.ReactNode }) 
   const [isCartOpen, setIsCartOpen] = useState(false);
   
   const setCartOpen = (open: boolean) => {
-    console.log('🛒 Cart drawer state changing to:', open);
     setIsCartOpen(open);
   };
 
@@ -41,7 +40,6 @@ const FloatingCartButton = () => {
         size="lg"
         className="relative h-14 w-14 rounded-full bg-purple-600 hover:bg-purple-700 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-110"
         onClick={() => {
-          console.log('🛒 Floating cart button clicked!');
           setCartOpen(true);
         }}
       >

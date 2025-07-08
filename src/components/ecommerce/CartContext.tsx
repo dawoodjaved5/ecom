@@ -138,13 +138,28 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         paymentMethod: formData.paymentMethod === 'cash' ? 'Cash on Delivery' : formData.paymentMethod,
         createdAt: new Date(),
       };
+      
+      // Save order to database
       await addOrder(order);
+      
+      // Update product quantities
       await updateProductQuantities(order.items);
+      
+      // Clear the cart
       clearCart();
-      toast.success("Order placed successfully!");
+      
+      // Show prominent success message
+      toast.success("🎉 Order Placed Successfully!", {
+        description: `Thank you for your order! Your order total was $${getCartTotal().toFixed(2)}. We'll send you a confirmation email shortly.`,
+        duration: 5000,
+        action: {
+          label: "Continue Shopping",
+          onClick: () => window.location.href = "/"
+        }
+      });
+      
       return true;
     } catch (error) {
-      console.error('Failed to place order:', error);
       toast.error("Failed to place order. Please try again.");
       return false;
     }

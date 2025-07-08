@@ -79,11 +79,13 @@ const ProductQuickView = ({ product, open, onOpenChange }: ProductQuickViewProps
           {/* Product Images */}
           <div className="space-y-4">
             <div className="relative">
-              <img
-                src={product.images[0] || "/placeholder-product.jpg"}
-                alt={product.title}
-                className="w-full h-96 object-cover rounded-lg"
-              />
+              <div className="w-full h-96 bg-gray-100 flex items-center justify-center rounded-lg">
+                <img
+                  src={product.images[0] || "/placeholder-product.jpg"}
+                  alt={product.title}
+                  className="w-full h-full object-contain rounded-lg"
+                />
+              </div>
               <Button
                 variant="ghost"
                 size="icon"

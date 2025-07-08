@@ -7,11 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { useCart } from "@/components/ecommerce/CartContext";
+import { useCart, OrderFormData } from "@/components/ecommerce/CartContext";
 import { useToast } from "@/hooks/use-toast";
 
 const Checkout = () => {
-  const { state, clearCart } = useCart();
+  const { cart, getCartTotal, placeOrder } = useCart();
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -32,11 +32,13 @@ const Checkout = () => {
     nameOnCard: '',
   });
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Basic validation
@@ -60,17 +62,37 @@ const Checkout = () => {
       return;
     }
 
-    // Simulate order processing
-    toast({
-      title: "Order Placed Successfully!",
-      description: "Your order has been placed and will be processed shortly.",
-    });
+    setIsSubmitting(true);
 
-    clearCart();
-    navigate('/order-success');
+    try {
+      // Convert form data to OrderFormData format
+      const orderFormData: OrderFormData = {
+        customerName: `${formData.firstName} ${formData.lastName}`,
+        customerEmail: formData.email,
+        customerPhone: formData.phone,
+        customerAddress: `${formData.address}, ${formData.city}, ${formData.state} ${formData.zipCode}, ${formData.country}`,
+        paymentMethod: formData.paymentMethod
+      };
+
+      // Use CartContext's placeOrder function
+      const success = await placeOrder(orderFormData);
+      
+      if (success) {
+        // Navigate to home page after successful order
+        navigate('/');
+      }
+    } catch (error) {
+      toast({
+        title: "Order Failed",
+        description: "Failed to place order. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  if (state.items.length === 0) {
+  if (cart.length === 0) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -85,6 +107,8 @@ const Checkout = () => {
       </div>
     );
   }
+
+  const total = getCartTotal();
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -232,6 +256,7 @@ const Checkout = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="card">Credit/Debit Card</SelectItem>
+                      <SelectItem value="cash">Cash on Delivery</SelectItem>
                       <SelectItem value="paypal">PayPal</SelectItem>
                       <SelectItem value="apple">Apple Pay</SelectItem>
                       <SelectItem value="google">Google Pay</SelectItem>
@@ -295,7 +320,7 @@ const Checkout = () => {
               <CardContent className="space-y-4">
                 {/* Items */}
                 <div className="space-y-3 max-h-64 overflow-y-auto">
-                  {state.items.map((item) => (
+                  {cart.map((item) => (
                     <div key={`${item.id}-${item.size}`} className="flex gap-3">
                       <img
                         src={item.image}
@@ -307,7 +332,7 @@ const Checkout = () => {
                         <p className="text-xs text-gray-500">
                           {item.size && `Size: ${item.size.toUpperCase()}, `}Qty: {item.quantity}
                         </p>
-                        <p className="font-semibold">{item.price}</p>
+                        <p className="font-semibold">${item.price}</p>
                       </div>
                     </div>
                   ))}
@@ -319,7 +344,7 @@ const Checkout = () => {
                 <div className="space-y-2">
                   <div className="flex justify-between">
                     <span>Subtotal</span>
-                    <span>${state.total.toFixed(2)}</span>
+                    <span>${total.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Shipping</span>
@@ -327,12 +352,12 @@ const Checkout = () => {
                   </div>
                   <div className="flex justify-between">
                     <span>Tax</span>
-                    <span>${(state.total * 0.08).toFixed(2)}</span>
+                    <span>${(total * 0.08).toFixed(2)}</span>
                   </div>
                   <hr />
                   <div className="flex justify-between font-bold text-lg">
                     <span>Total</span>
-                    <span>${(state.total * 1.08).toFixed(2)}</span>
+                    <span>${(total * 1.08).toFixed(2)}</span>
                   </div>
                 </div>
 
@@ -343,9 +368,10 @@ const Checkout = () => {
 
                 <Button 
                   onClick={handleSubmit}
-                  className="w-full bg-green-500 hover:bg-green-600"
+                  className="w-full bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700"
+                  disabled={isSubmitting}
                 >
-                  Place Order
+                  {isSubmitting ? "Processing Order..." : "Place Order"}
                 </Button>
               </CardContent>
             </Card>

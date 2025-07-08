@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, Minus, Plus, Star } from 'lucide-react';
+import { ChevronLeft, Minus, Plus, Star, ChevronRight } from 'lucide-react';
 import { useAdmin, AdminProduct, isVariantAvailable, getVariantQuantity } from '@/contexts/AdminContext';
 import { useCart } from '@/components/ecommerce/CartContext';
 import Header from '@/components/ecommerce/Header';
@@ -19,6 +19,14 @@ const ProductDetail = () => {
   const [quantity, setQuantity] = useState(1);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [imageError, setImageError] = useState(false);
+  
+  // Touch/swipe functionality
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const imageContainerRef = useRef<HTMLDivElement>(null);
+
+  // Minimum swipe distance
+  const minSwipeDistance = 50;
 
   useEffect(() => {
     if (!id) return;
@@ -40,80 +48,97 @@ const ProductDetail = () => {
     }
   }, [id, getProductById, navigate, loading]);
 
-  if (loading || !product) {
+  const getCurrentImageUrl = () => {
+    if (!product || !product.images || product.images.length === 0) {
+      return "/placeholder-product.jpg";
+    }
+    const currentImage = product.images[currentImageIndex];
+    return typeof currentImage === 'string' ? currentImage : currentImage.url;
+  };
+
+  const handleAddToCart = () => {
+    if (!product) return;
+    
+    const availableQuantity = getVariantQuantity(product, selectedSize, selectedColor);
+    if (availableQuantity === 0) {
+      toast.error("This variant is out of stock!");
+      return;
+    }
+    
+    if (quantity > availableQuantity) {
+      toast.error(`Only ${availableQuantity} items available in stock!`);
+      return;
+    }
+    
+    addToCart({
+      id: product.id,
+      title: product.title,
+      price: product.price,
+      image: getCurrentImageUrl(),
+      size: selectedSize,
+      color: selectedColor,
+      quantity: quantity,
+      maxQuantity: availableQuantity
+    });
+    
+    toast.success("Added to cart!");
+  };
+
+  // Touch handlers for swipe functionality
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+    
+    if (isLeftSwipe && product && product.images && currentImageIndex < product.images.length - 1) {
+      setCurrentImageIndex(prev => prev + 1);
+    } else if (isRightSwipe && currentImageIndex > 0) {
+      setCurrentImageIndex(prev => prev - 1);
+    }
+  };
+
+  // Navigation functions
+  const goToPrevious = () => {
+    if (!product || !product.images || currentImageIndex === 0) return;
+    setCurrentImageIndex(prev => prev - 1);
+  };
+
+  const goToNext = () => {
+    if (!product || !product.images || currentImageIndex === product.images.length - 1) return;
+    setCurrentImageIndex(prev => prev + 1);
+  };
+
+  if (!product) {
     return (
       <div className="min-h-screen bg-white">
         <Header />
-        <div className="flex items-center justify-center h-96">
+        <div className="h-16" />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
           <div className="text-center">
-            {loading ? (
-              <span className="text-lg text-gray-500">Loading product...</span>
-            ) : (
-              <>
-                <h2 className="text-2xl font-semibold text-gray-900 mb-2">Product not found</h2>
-                <Button onClick={() => navigate('/')} variant="outline">
-                  Back to Home
-                </Button>
-              </>
-            )}
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading product...</p>
           </div>
         </div>
       </div>
     );
   }
 
-  const getCurrentImageUrl = () => {
-    const img = product.images?.[currentImageIndex];
-    if (imageError || !img) {
-      return "/placeholder.svg";
-    }
-    return typeof img === 'string' ? img : img.url;
-  };
-
-  const handleAddToCart = () => {
-    // Check if product requires size selection
-    if (product.sizes && product.sizes.length > 0 && !selectedSize) {
-      toast.error('Please select a size');
-      return;
-    }
-
-    // Check if product requires color selection
-    if (product.colors && product.colors.length > 0 && !selectedColor) {
-      toast.error('Please select a color');
-      return;
-    }
-
-    // Check availability
-    if (!isVariantAvailable(product, selectedSize, selectedColor)) {
-      toast.error('This variant is out of stock');
-      return;
-    }
-
-    const availableQuantity = getVariantQuantity(product, selectedSize, selectedColor);
-    if (quantity > availableQuantity) {
-      toast.error(`Only ${availableQuantity} items available`);
-      return;
-    }
-
-    // Add to cart
-    for (let i = 0; i < quantity; i++) {
-      addToCart({
-        id: product.id,
-        title: product.title,
-        price: product.price,
-        image: getCurrentImageUrl(),
-        size: selectedSize,
-        color: selectedColor,
-        availableQuantity: availableQuantity,
-      });
-    }
-
-    toast.success(`${quantity} item(s) added to cart`);
-  };
-
-  const discountPercentage = product.originalPrice 
+  const discountPercentage = product.originalPrice && product.originalPrice > product.price
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : 0;
+
+  const hasMultipleImages = product.images && product.images.length > 1;
 
   return (
     <div className="min-h-screen bg-white">
@@ -135,18 +160,54 @@ const ProductDetail = () => {
           {/* Product Images */}
           <div className="space-y-4">
             {/* Main Image */}
-            <div className="aspect-[4/5] bg-gray-50 overflow-hidden">
+            <div 
+              ref={imageContainerRef}
+              className="relative aspect-[4/5] bg-gray-50 overflow-hidden rounded-lg"
+              onTouchStart={onTouchStart}
+              onTouchMove={onTouchMove}
+              onTouchEnd={onTouchEnd}
+            >
               <img
                 src={getCurrentImageUrl()}
                 alt={product.title}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-contain"
                 onError={() => setImageError(true)}
                 onLoad={() => setImageError(false)}
               />
+              
+              {/* Navigation Arrows - Only show if multiple images */}
+              {hasMultipleImages && (
+                <>
+                  <button
+                    onClick={goToPrevious}
+                    disabled={currentImageIndex === 0}
+                    className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black/40 hover:bg-black/60 backdrop-blur-sm rounded-full p-3 transition-all duration-300 text-white z-20 disabled:opacity-50 disabled:cursor-not-allowed"
+                    aria-label="Previous image"
+                  >
+                    <ChevronLeft className="h-6 w-6" />
+                  </button>
+                  
+                  <button
+                    onClick={goToNext}
+                    disabled={currentImageIndex === product.images.length - 1}
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/40 hover:bg-black/60 backdrop-blur-sm rounded-full p-3 transition-all duration-300 text-white z-20 disabled:opacity-50 disabled:cursor-not-allowed"
+                    aria-label="Next image"
+                  >
+                    <ChevronRight className="h-6 w-6" />
+                  </button>
+                </>
+              )}
+
+              {/* Image Counter - Only show if multiple images */}
+              {hasMultipleImages && (
+                <div className="absolute top-2 left-2 bg-black/50 backdrop-blur-sm text-white text-sm px-3 py-1 rounded-full z-20">
+                  {currentImageIndex + 1} / {product.images.length}
+                </div>
+              )}
             </div>
 
             {/* Thumbnail Images */}
-            {product.images && product.images.length > 1 && (
+            {hasMultipleImages && (
               <div className="grid grid-cols-4 gap-2">
                 {product.images.map((image, index) => {
                   const imgUrl = typeof image === 'string' ? image : image.url;
@@ -154,14 +215,14 @@ const ProductDetail = () => {
                     <button
                       key={index}
                       onClick={() => setCurrentImageIndex(index)}
-                      className={`aspect-square bg-gray-50 overflow-hidden border-2 transition-colors ${
+                      className={`aspect-square bg-gray-50 overflow-hidden border-2 transition-colors rounded-lg ${
                         index === currentImageIndex ? 'border-gray-900' : 'border-gray-200'
                       }`}
                     >
                       <img
                         src={imgUrl}
                         alt={`${product.title} ${index + 1}`}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-contain"
                       />
                     </button>
                   );

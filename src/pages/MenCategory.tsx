@@ -52,12 +52,6 @@ const MenCategory = () => {
 
   useEffect(() => {
     const ctx = gsap.context(() => {
-      gsap.from('.category-hero', {
-        opacity: 0,
-        y: 100,
-        duration: 1.2,
-        ease: 'power3.out',
-      });
       gsap.from('.product-card', {
         opacity: 0,
         y: 80,
@@ -80,23 +74,27 @@ const MenCategory = () => {
 
   return (
     <CartDrawerProvider>
-      <div className="min-h-screen bg-white font-inter overflow-x-hidden">
+      <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-white font-inter overflow-x-hidden">
         <Header />
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50 pt-32">
+        <div className="min-h-screen bg-gradient-to-br from-gray-50/50 via-white to-gray-50/50 pt-32">
           {/* Header */}
-          <div className="bg-white/80 backdrop-blur-md border-b border-blue-100 z-30">
+          <div className="bg-white/90 backdrop-blur-xl border-b border-gray-200/50 z-30 shadow-lg">
             <div className="max-w-7xl mx-auto px-4 py-4">
               <div className="flex items-center justify-between">
-                <Link to="/" className="flex items-center gap-3 text-blue-600 hover:text-blue-700 transition-colors">
+                <Link to="/" className="flex items-center gap-3 text-gray-600 hover:text-gray-800 transition-all duration-300 hover:scale-105">
                   <ArrowLeft size={20} />
-                  <span className="font-semibold">Back to Home</span>
+                  <span className="font-bold">Back to Home</span>
                 </Link>
                 <div className="flex items-center gap-4">
                   <Button
                     variant={viewMode === 'grid' ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => setViewMode('grid')}
-                    className="bg-blue-500 hover:bg-blue-600"
+                    className={`${
+                      viewMode === 'grid' 
+                        ? 'bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 text-white shadow-lg' 
+                        : 'border-gray-300 text-gray-600 hover:bg-gray-50'
+                    } transition-all duration-300`}
                   >
                     <Grid size={16} />
                   </Button>
@@ -104,7 +102,11 @@ const MenCategory = () => {
                     variant={viewMode === 'list' ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => setViewMode('list')}
-                    className="bg-blue-500 hover:bg-blue-600"
+                    className={`${
+                      viewMode === 'list' 
+                        ? 'bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 text-white shadow-lg' 
+                        : 'border-gray-300 text-gray-600 hover:bg-gray-50'
+                    } transition-all duration-300`}
                   >
                     <List size={16} />
                   </Button>
@@ -113,47 +115,30 @@ const MenCategory = () => {
             </div>
           </div>
 
-          {/* Hero Section */}
-          <div className="category-hero relative overflow-hidden bg-gradient-to-r from-blue-600 via-blue-400 to-cyan-400 text-white py-20">
-            <div className="absolute inset-0 bg-black/20"></div>
-            <div className="relative z-10 max-w-7xl mx-auto px-4 text-center">
-              <h1 className="text-5xl md:text-7xl font-bold mb-6 tracking-tight">
-                MEN
-              </h1>
-              <p className="text-xl md:text-2xl mb-8 opacity-90 max-w-2xl mx-auto">
-                Discover our premium collection of men's fashion. From sharp business attire to casual weekend wear, find pieces that define your unique style and elevate your wardrobe.
-              </p>
-              <div className="text-lg font-medium bg-white/20 backdrop-blur-sm rounded-full px-6 py-2 inline-block">
-                {sortedProducts.length} Products Available
-              </div>
-            </div>
-            <div className="absolute bottom-0 left-0 w-full h-20 bg-gradient-to-t from-blue-50 to-transparent"></div>
-          </div>
-
           {/* Search and Filters */}
-          <div className="bg-white/70 backdrop-blur-sm border-b border-blue-100">
+          <div className="bg-white/80 backdrop-blur-xl border-b border-gray-200/50 shadow-lg">
             <div className="max-w-7xl mx-auto px-4 py-6">
               <SearchBar onSearch={handleSearch} placeholder="Search men's fashion..." />
             </div>
           </div>
 
-          {/* Advanced Filter/Sort Bar (from original MenCategory) */}
-          <div className="bg-white border-b border-gray-200 sticky top-24 z-40">
+          {/* Filter/Sort Bar */}
+          <div className="bg-white/90 backdrop-blur-xl border-b border-gray-200/50 sticky top-24 z-40 shadow-lg">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
               <div className="flex flex-col space-y-4 lg:flex-row lg:justify-between lg:items-center lg:space-y-0">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-6">
-                  <p className="text-gray-900 font-medium text-sm sm:text-base mb-2 sm:mb-0">
+                  <p className="text-gray-900 font-bold text-sm sm:text-base mb-2 sm:mb-0">
                     {sortedProducts.length} {sortedProducts.length === 1 ? 'product' : 'products'}
                   </p>
-                  <div className="hidden sm:block h-4 w-px bg-gray-300"></div>
-                  <div className="text-xs sm:text-sm text-gray-500">
+                  <div className="hidden sm:block h-4 w-px bg-gradient-to-b from-gray-300 to-transparent"></div>
+                  <div className="text-xs sm:text-sm text-gray-500 font-medium">
                     Updated daily with new arrivals
                   </div>
                 </div>
                 <div className="flex items-center justify-between sm:justify-end space-x-4">
-                  <span className="text-sm font-medium text-gray-700">Sort by:</span>
+                  <span className="text-sm font-bold text-gray-700">Sort by:</span>
                   <Select value={sortBy} onValueChange={setSortBy}>
-                    <SelectTrigger className="w-40 sm:w-48 border-gray-300 focus:border-gray-900 focus:ring-0 text-sm">
+                    <SelectTrigger className="w-40 sm:w-48 border-2 border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 text-sm rounded-xl bg-white/80 backdrop-blur-sm">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -170,7 +155,7 @@ const MenCategory = () => {
           </div>
 
           {/* Products Grid */}
-          <div className="max-w-7xl mx-auto px-4 py-12">
+          <div className="max-w-7xl mx-auto px-4 py-16">
             <div className={`grid gap-8 ${
               viewMode === 'grid' 
                 ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' 

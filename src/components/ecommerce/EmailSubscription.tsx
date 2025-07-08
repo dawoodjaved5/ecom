@@ -9,7 +9,7 @@ const EmailSubscription = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Email subscription:", email);
+
     setEmail("");
   };
 

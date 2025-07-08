@@ -78,9 +78,7 @@ interface AdminContextType {
     averageOrderValue: number;
     topSellingProducts: Array<{ product: AdminProduct; soldQuantity: number }>;
   };
-  testConnection: () => Promise<void>;
-  testOrderCreation: () => Promise<boolean>;
-  debugImageUpload: () => Promise<boolean>;
+
   loading: boolean;
   error: string | null;
 }
@@ -156,7 +154,6 @@ const parseInventoryData = (data: any): ProductInventory | ProductVariantInvento
     try {
       return data ? JSON.parse(data) : {};
     } catch (error) {
-      console.warn('Failed to parse inventory data:', data, error);
       return {};
     }
   }
@@ -182,19 +179,11 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
   // Load cover images for public access (no authentication required)
   const loadPublicCoverImages = async () => {
     try {
-      console.log('=== LOADING COVER IMAGES ===');
-      console.log('Database ID:', DATABASE_ID);
-      console.log('Cover Images Collection ID:', COVER_IMAGES_COLLECTION_ID);
-      
       const coverRes = await databases.listDocuments(
         DATABASE_ID,
         COVER_IMAGES_COLLECTION_ID,
         [Query.orderDesc('createdAt')]
       );
-      
-      console.log('✅ Cover images query successful');
-      console.log('Total cover images found:', coverRes.total);
-      console.log('Raw cover images from database:', coverRes.documents);
       
       const mappedCoverImages = coverRes.documents.map((doc: any) => ({
         id: doc.$id,
@@ -207,20 +196,11 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
       }));
       
       setCoverImages(mappedCoverImages);
-      console.log('✅ Cover images loaded successfully:', mappedCoverImages);
+      setCoverImages(mappedCoverImages);
     } catch (error: any) {
-      console.error('❌ Error loading cover images:', error);
-      console.error('Error details:', {
-        message: error.message,
-        code: error.code,
-        type: error.type
-      });
-      
       if (error.code === 404) {
-        console.warn('Cover images collection not found. You need to create it in Appwrite console.');
         toast.error('Cover images collection not found. Please create it in Appwrite console.');
       } else if (error.code === 401) {
-        console.warn('Permission denied for cover images collection.');
         toast.error('Permission denied for cover images collection.');
       }
       
@@ -233,14 +213,11 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     setError(null);
     try {
-      console.log('Loading products for public access...');
       const prodRes = await databases.listDocuments(
         DATABASE_ID,
         PRODUCTS_COLLECTION_ID,
         [Query.orderDesc('createdAt')]
       );
-      
-      console.log('Raw products from database:', prodRes.documents);
       
       const mappedProducts = prodRes.documents.map((doc: any) => {
         if (!doc.$id || !doc.title) return null;
@@ -266,10 +243,8 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
         };
       }).filter(Boolean) as AdminProduct[];
       
-      console.log('Mapped products:', mappedProducts);
       setProducts(mappedProducts);
     } catch (err: any) {
-      console.error('Failed to load products:', err);
       setError('Failed to load products: ' + (err.message || err.toString()));
     } finally {
       setLoading(false);
@@ -286,19 +261,11 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
   // Load orders for public access (to support checkout)
   const loadPublicOrders = async () => {
     try {
-      console.log('=== LOADING ORDERS FROM DATABASE ===');
-      console.log('Database ID:', DATABASE_ID);
-      console.log('Orders Collection ID:', ORDERS_COLLECTION_ID);
-      
       const orderRes = await databases.listDocuments(
         DATABASE_ID,
         ORDERS_COLLECTION_ID,
         [Query.orderDesc('createdAt')]
       );
-      
-      console.log('✅ Orders query successful');
-      console.log('Total orders found:', orderRes.total);
-      console.log('Raw orders from database:', orderRes.documents);
       
       const mappedOrders = orderRes.documents.map((doc: any) => ({
         id: doc.$id,
@@ -313,16 +280,9 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
         createdAt: doc.createdAt ? new Date(doc.createdAt) : new Date(),
       }));
       
-      console.log('Mapped orders for state:', mappedOrders);
       setOrders(mappedOrders);
-      console.log('Orders state updated with', mappedOrders.length, 'orders');
     } catch (err: any) {
-      console.error('❌ Failed to load orders:', err);
-      console.error('Error details:', {
-        message: err.message,
-        code: err.code,
-        type: err.type
-      });
+      // Silently handle order loading errors for public access
     }
   };
 
@@ -437,60 +397,31 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
 
   // Upload images to Appwrite Storage
   const uploadImages = async (files: File[]): Promise<{ fileId: string; url: string }[]> => {
-    console.log('=== STARTING IMAGE UPLOAD ===');
-    console.log('Files to upload:', files.length);
-    console.log('Bucket ID:', BUCKET_ID);
-    
     const uploaded: { fileId: string; url: string }[] = [];
     
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       try {
-        console.log(`\n--- Uploading file ${i + 1}/${files.length} ---`);
-        console.log('File name:', file.name);
-        console.log('File size:', file.size, 'bytes');
-        console.log('File type:', file.type);
-        
         // Check if file is valid
         if (!file || file.size === 0) {
-          console.error('Invalid file:', file);
           continue;
         }
         
         // Check file size (max 10MB)
         if (file.size > 10 * 1024 * 1024) {
-          console.error('File too large:', file.size);
           toast.error(`File ${file.name} is too large (max 10MB)`);
           continue;
         }
         
         const fileId = ID.unique();
-        console.log('Generated file ID:', fileId);
-        console.log('About to call storage.createFile...');
         
         const res = await storage.createFile(BUCKET_ID, fileId, file);
-        
-        console.log('✅ File uploaded successfully!');
-        console.log('Upload response:', res);
         
         const url = storage.getFileView(BUCKET_ID, res.$id).toString();
         uploaded.push({ fileId: res.$id, url });
       } catch (err: any) {
-        console.error('❌ Image upload failed for file:', file.name);
-        console.error('Error details:', err);
-        console.error('Error message:', err.message);
-        console.error('Error code:', err.code);
-        console.error('Error type:', err.type);
         toast.error('Image upload failed for ' + file.name + ': ' + (err.message || err.toString()));
       }
-    }
-    
-    console.log('=== IMAGE UPLOAD COMPLETE ===');
-    console.log('Total URLs generated:', uploaded.length);
-    console.log('URLs:', uploaded.map(u => u.url));
-    
-    if (uploaded.length !== files.length) {
-      console.warn(`⚠️  Upload mismatch: ${files.length} files submitted, ${uploaded.length} URLs generated`);
     }
     
     return uploaded;
@@ -499,34 +430,18 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
   // Add product to Appwrite
   const addProduct = async (productData: Omit<AdminProduct, 'id' | 'createdAt' | 'updatedAt'> & { imageFiles?: File[] }) => {
     try {
-      console.log('Adding product with data:', productData);
-      
       // Check if user is authenticated
       try {
         const session = await account.get();
-        console.log('Current user session:', session);
       } catch (authErr) {
-        console.error('User not authenticated:', authErr);
         toast.error('Please login to add products');
         return;
       }
       
       let images = productData.images || [];
-      console.log('Initial images array:', images);
-      console.log('ImageFiles received:', productData.imageFiles);
-      console.log('ImageFiles length:', productData.imageFiles?.length);
       
       if (productData.imageFiles && productData.imageFiles.length > 0) {
-        console.log('Processing image files for upload...');
-        console.log('Image files details:', productData.imageFiles.map(f => ({
-          name: f.name,
-          size: f.size,
-          type: f.type
-        })));
         images = await uploadImages(productData.imageFiles);
-        console.log('Final images URLs after upload:', images);
-      } else {
-        console.log('No image files to upload');
       }
 
       // Convert images to array of URLs for Appwrite
@@ -553,18 +468,12 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
         updatedAt: new Date().toISOString(),
       };
 
-      console.log('Creating document with data:', documentData);
-      console.log('Database ID:', DATABASE_ID);
-      console.log('Collection ID:', PRODUCTS_COLLECTION_ID);
-
       const doc = await databases.createDocument(
         DATABASE_ID,
         PRODUCTS_COLLECTION_ID,
         ID.unique(),
         documentData
       );
-
-      console.log('Document created successfully:', doc);
 
       if (doc && doc.$id) {
         const newProduct: AdminProduct = {
@@ -594,7 +503,6 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
         toast.success('Product added successfully!');
       }
     } catch (err: any) {
-      console.error('Error adding product:', err);
       toast.error('Failed to add product: ' + (err.message || err.toString()));
     }
   };
@@ -602,33 +510,21 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
   // Update product in Appwrite
   const updateProduct = async (id: string, updates: Partial<AdminProduct> & { imageFiles?: File[] }) => {
     try {
-      console.log('=== UPDATING PRODUCT ===');
-      console.log('Product ID:', id);
-      console.log('Updates received:', updates);
-      console.log('Image files:', updates.imageFiles);
-      
       // Find the existing product to preserve its images if no new images are provided
       const existingProduct = products.find(p => p.id === id);
-      console.log('Existing product:', existingProduct);
       
       let images = existingProduct?.images || []; // Start with existing images
       
       // Only update images if new image files are provided
       if (updates.imageFiles && updates.imageFiles.length > 0) {
-        console.log('Uploading new images...');
         images = await uploadImages(updates.imageFiles);
-        console.log('New images uploaded:', images);
       } else if (updates.images && updates.images.length > 0) {
         // If images array is explicitly provided (e.g., from form state), use it
         images = updates.images;
-        console.log('Using provided images array:', images);
       }
       
       // Remove imageFiles from the update object before sending to database
       const { imageFiles, ...updateData } = updates;
-      
-      console.log('Final images to save:', images);
-      console.log('Update data to send:', updateData);
       
       // Prepare update data with proper JSON stringification for inventory fields
       const finalUpdateData: any = { ...updateData };
@@ -674,10 +570,9 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
           updatedAt: new Date(doc.updatedAt)
         } : p));
       }
-      console.log('✅ Product updated successfully in database and local state');
+
       toast.success('Product updated!');
     } catch (err) {
-      console.error('❌ Failed to update product:', err);
       toast.error('Failed to update product');
     }
   };
@@ -692,7 +587,7 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
             try {
               await storage.deleteFile(BUCKET_ID, img.fileId);
             } catch (e) {
-              console.warn('Failed to delete file from storage:', img.fileId, e);
+              // Silently handle storage deletion errors
             }
           }
         }
@@ -708,9 +603,6 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
   // Restock product
   const restockProduct = async (id: string, quantity: number) => {
     try {
-      console.log(`=== RESTOCKING PRODUCT ${id} ===`);
-      console.log(`Adding ${quantity} items to stock`);
-      
       const product = products.find(p => p.id === id);
       if (!product) {
         toast.error('Product not found');
@@ -718,7 +610,6 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
       }
       
       const newQuantity = product.quantity + quantity;
-      console.log(`Current stock: ${product.quantity}, New stock: ${newQuantity}`);
       
       // Update in database
       await databases.updateDocument(
@@ -735,10 +626,8 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
           : p
       ));
       
-      toast.success(`✅ Restocked ${product.title}! Added ${quantity} items. New stock: ${newQuantity}`);
-      console.log(`✅ Successfully restocked ${product.title}`);
+      toast.success(`Restocked ${product.title}! Added ${quantity} items. New stock: ${newQuantity}`);
     } catch (err: any) {
-      console.error('❌ Failed to restock product:', err);
       toast.error('Failed to restock product');
     }
   };
@@ -753,14 +642,9 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
     color?: string;
   }>) => {
     try {
-      console.log('=== UPDATING PRODUCT QUANTITIES ===');
-      console.log('Order items:', orderItems);
-      
       for (const item of orderItems) {
         const product = products.find(p => p.id === item.productId);
         if (product) {
-          console.log(`\n--- Processing ${product.title} ---`);
-          console.log(`Ordered: ${item.quantity}, Size: ${item.size}, Color: ${item.color}`);
           
           // Create copies of current inventories
           const newSizeInventory = { ...(product.sizeInventory || {}) };
@@ -770,14 +654,12 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
           if (item.size && newSizeInventory && Object.keys(newSizeInventory).length > 0) {
             const currentSizeQty = newSizeInventory[item.size] || 0;
             newSizeInventory[item.size] = Math.max(0, currentSizeQty - item.quantity);
-            console.log(`Size ${item.size}: ${currentSizeQty} -> ${newSizeInventory[item.size]}`);
           }
           
           // Update color inventory if color is specified and color inventory exists
           if (item.color && newColorInventory && Object.keys(newColorInventory).length > 0) {
             const currentColorQty = newColorInventory[item.color] || 0;
             newColorInventory[item.color] = Math.max(0, currentColorQty - item.quantity);
-            console.log(`Color ${item.color}: ${currentColorQty} -> ${newColorInventory[item.color]}`);
           }
           
           // Calculate new total quantity based on updated inventories
@@ -787,7 +669,6 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
             colorInventory: newColorInventory
           };
           const newTotalQuantity = calculateTotalQuantity(updatedProduct);
-          console.log(`Total quantity: ${product.quantity} -> ${newTotalQuantity}`);
           
           // Prepare database update
           const updateData: any = {
@@ -801,8 +682,6 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
           if (Object.keys(newColorInventory).length > 0) {
             updateData.colorInventory = JSON.stringify(newColorInventory);
           }
-          
-          console.log('Update data for database:', updateData);
           
           // Update in database
           await databases.updateDocument(
@@ -824,18 +703,14 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
               : p
           ));
           
-          console.log(`✅ Updated ${product.title} inventory successfully`);
         } else {
-          console.warn(`⚠️ Product not found: ${item.productId}`);
+          // Product not found - skip silently
         }
       }
       
       // Refresh products to ensure consistency
       loadPublicProducts();
-      
-      console.log('✅ All product quantities updated successfully');
     } catch (err: any) {
-      console.error('❌ Failed to update product quantities:', err);
       toast.error('Failed to update product stock');
     }
   };
@@ -843,19 +718,11 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
   // Add order to Appwrite
   const addOrder = async (order: AdminOrder) => {
     try {
-      console.log('=== ADDING ORDER TO DATABASE ===');
-      console.log('Order data received:', order);
-      console.log('Database ID:', DATABASE_ID);
-      console.log('Orders Collection ID:', ORDERS_COLLECTION_ID);
-      
       // Check authentication status
       try {
         const session = await account.get();
-        console.log('✅ User is authenticated:', session.email);
       } catch (authErr) {
-        console.error('❌ User not authenticated:', authErr);
-        // For now, let's try without authentication
-        console.log('⚠️  Proceeding without authentication...');
+        // Proceed without authentication for public orders
       }
       
       const documentData = {
@@ -870,18 +737,13 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
         createdAt: new Date().toISOString(),
       };
       
-      console.log('Document data to save:', documentData);
-      console.log('Items serialized:', documentData.items);
-      
       const doc = await databases.createDocument(
         DATABASE_ID,
         ORDERS_COLLECTION_ID,
         ID.unique(),
         documentData
       );
-      console.log('✅ Order document created successfully:', doc);
-      
-              if (doc && doc.$id && doc.customerName) {
+      if (doc && doc.$id && doc.customerName) {
         const newOrder = {
           id: doc.$id,
           customerName: doc.customerName,
@@ -895,27 +757,16 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
           createdAt: new Date(doc.createdAt)
         };
         
-        console.log('Adding order to local state:', newOrder);
         setOrders(prev => [newOrder, ...prev]);
         
         // Update product quantities based on order items
-        console.log('Updating product quantities...');
         await updateProductQuantities(order.items);
         
         // Refresh orders list to ensure consistency
-        console.log('Refreshing orders list...');
         loadPublicOrders();
-        
-        console.log('Order added successfully!');
       }
       toast.success('Order placed!');
     } catch (err: any) {
-      console.error('❌ Failed to add order:', err);
-      console.error('Error details:', {
-        message: err.message,
-        code: err.code,
-        type: err.type
-      });
       toast.error('Failed to place order: ' + (err.message || err.toString()));
     }
   };
@@ -923,18 +774,12 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
   // Update order status in Appwrite
   const updateOrderStatus = async (orderId: string, status: AdminOrder['status']) => {
     try {
-      console.log('=== UPDATING ORDER STATUS ===');
-      console.log('Order ID:', orderId);
-      console.log('New Status:', status);
-      
       const doc = await databases.updateDocument(
         DATABASE_ID,
         ORDERS_COLLECTION_ID,
         orderId,
         { status }
       );
-      
-      console.log('✅ Order status updated in database:', doc);
       
       if (doc && doc.$id) {
         setOrders(prev => prev.map(o => o.id === orderId ? {
@@ -950,16 +795,9 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
           createdAt: new Date(doc.createdAt)
         } : o));
         
-        console.log('✅ Order status updated in local state');
         toast.success(`Order status updated to ${status}!`);
       }
     } catch (err: any) {
-      console.error('❌ Failed to update order status:', err);
-      console.error('Error details:', {
-        message: err.message,
-        code: err.code,
-        type: err.type
-      });
       toast.error('Failed to update order status: ' + (err.message || err.toString()));
     }
   };
@@ -967,206 +805,11 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
   const getProductById = (id: string) => products.find(product => product.id === id);
   const getLowStockProducts = () => products.filter(product => product.quantity <= 10);
   
-  const testOrderCreation = async () => {
-    try {
-      console.log('=== TESTING ORDER CREATION ===');
-      
-      const testOrder = {
-        customerName: 'Test Customer',
-        customerEmail: 'test@example.com',
-        customerPhone: '1234567890',
-        customerAddress: '123 Test Street',
-        items: JSON.stringify([
-          {
-            productId: 'test-product',
-            productTitle: 'Test Product',
-            quantity: 1,
-            price: 25.99
-          }
-        ]),
-        total: 25.99,
-        status: 'pending',
-        paymentMethod: 'Cash on Delivery',
-        createdAt: new Date().toISOString(),
-      };
-      
-      console.log('Test order data:', testOrder);
-      
-      const doc = await databases.createDocument(
-        DATABASE_ID,
-        ORDERS_COLLECTION_ID,
-        ID.unique(),
-        testOrder
-      );
-      
-      console.log('✅ Test order created successfully:', doc);
-      toast.success('Test order created successfully!');
-      
-      // Refresh orders
-      loadPublicOrders();
-      
-      return true;
-    } catch (err: any) {
-      console.error('❌ Test order creation failed:', err);
-      console.error('Error details:', {
-        message: err.message,
-        code: err.code,
-        type: err.type,
-        response: err.response
-      });
-      toast.error('Test order failed: ' + (err.message || err.toString()));
-      return false;
-    }
-  };
 
-  const testConnection = async () => {
-    try {
-      console.log('=== TESTING APPWRITE CONNECTION ===');
-      
-      // Test authentication
-      try {
-        const session = await account.get();
-        console.log('✅ Authentication successful:', session);
-        console.log('User ID:', session.$id);
-        console.log('User email:', session.email);
-      } catch (authErr) {
-        console.log('⚠️  User not authenticated, testing without auth:', authErr);
-      }
-      
-      // Test database read
-      const testRead = await databases.listDocuments(DATABASE_ID, PRODUCTS_COLLECTION_ID);
-      console.log('✅ Database read successful:', testRead);
-      console.log('Products in database:', testRead.total);
-      
-      // Test storage access
-      console.log('Testing storage with bucket ID:', BUCKET_ID);
-      
-      try {
-        const files = await storage.listFiles(BUCKET_ID);
-        console.log('✅ Storage LIST successful:', files);
-        console.log('Files in bucket:', files.total);
-        console.log('File list:', files.files);
-      } catch (listErr) {
-        console.error('❌ Storage LIST failed:', listErr);
-        console.error('List error details:', {
-          message: listErr.message,
-          code: listErr.code,
-          type: listErr.type
-        });
-      }
-      
-      // Test creating a small test image file to verify upload permissions
-      console.log('Testing image upload permissions...');
-      
-      // Create a simple 1x1 pixel PNG image
-      const canvas = document.createElement('canvas');
-      canvas.width = 1;
-      canvas.height = 1;
-      const ctx = canvas.getContext('2d');
-      ctx.fillStyle = '#FF0000';
-      ctx.fillRect(0, 0, 1, 1);
-      
-      // Convert to blob and create file
-      const testBlob = await new Promise<Blob>((resolve) => {
-        canvas.toBlob((blob) => resolve(blob!), 'image/png');
-      });
-      const testFile = new File([testBlob], 'connection-test.png', { type: 'image/png' });
-      
-      try {
-        const testUpload = await storage.createFile(BUCKET_ID, ID.unique(), testFile);
-        console.log('✅ Test file upload successful:', testUpload);
-        
-        // Test URL generation
-        const testUrl = storage.getFileView(BUCKET_ID, testUpload.$id);
-        console.log('✅ Test URL generation successful:', testUrl.toString());
-        
-        // Clean up test file
-        await storage.deleteFile(BUCKET_ID, testUpload.$id);
-        console.log('✅ Test file cleanup successful');
-        
-        toast.success('✅ All tests passed! Storage permissions are working correctly.');
-        
-      } catch (uploadErr) {
-        console.error('❌ Test file upload failed:', uploadErr);
-        console.error('Upload error details:', {
-          message: uploadErr.message,
-          code: uploadErr.code,
-          type: uploadErr.type,
-          response: uploadErr.response
-        });
-        
-        if (uploadErr.code === 401) {
-          toast.error('❌ Storage Permission Error: Please check bucket permissions in Appwrite console');
-        } else {
-          toast.error('❌ Storage upload failed: ' + uploadErr.message);
-        }
-      }
-      
-    } catch (err: any) {
-      console.error('❌ Connection test failed:', err);
-      console.error('Error details:', {
-        message: err.message,
-        code: err.code,
-        type: err.type,
-        response: err.response
-      });
-      toast.error('Connection test failed: ' + (err.message || err.toString()));
-    }
-  };
 
-  // Simple debug function to test image upload
-  const debugImageUpload = async () => {
-    try {
-      console.log('=== DEBUG IMAGE UPLOAD TEST ===');
-      
-      // Create a simple test image
-      const canvas = document.createElement('canvas');
-      canvas.width = 100;
-      canvas.height = 100;
-      const ctx = canvas.getContext('2d');
-      ctx.fillStyle = '#ff0000';
-      ctx.fillRect(0, 0, 100, 100);
-      
-      // Convert to blob and then file
-              return new Promise<boolean>((resolve) => {
-          canvas.toBlob(async (blob) => {
-            if (blob) {
-              const testImageFile = new File([blob], 'test-image.png', { type: 'image/png' });
-              console.log('Created test image file:', {
-                name: testImageFile.name,
-                size: testImageFile.size,
-                type: testImageFile.type
-              });
-              
-              try {
-                const fileId = ID.unique();
-                console.log('Attempting upload with file ID:', fileId);
-                
-                const uploadResult = await storage.createFile(BUCKET_ID, fileId, testImageFile);
-                console.log('✅ Debug image upload successful:', uploadResult);
-                
-                const url = storage.getFileView(BUCKET_ID, uploadResult.$id);
-                console.log('✅ URL generated:', url.toString());
-                
-                // Clean up
-                await storage.deleteFile(BUCKET_ID, uploadResult.$id);
-                console.log('✅ Debug image cleaned up');
-                
-                resolve(true);
-              } catch (err) {
-                console.error('❌ Debug image upload failed:', err);
-                resolve(false);
-              }
-            } else {
-              resolve(false);
-            }
-          }, 'image/png');
-        });
-    } catch (err) {
-      console.error('❌ Debug image upload setup failed:', err);
-      return false;
-    }
-  };
+
+
+
 
   // Cover Image Management Methods
   const addCoverImage = async (coverImageData: Omit<CoverImage, 'id' | 'createdAt'> & { imageFile: File }) => {
@@ -1176,8 +819,6 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
     }
 
     try {
-      console.log('Adding cover image...');
-      
       // Upload image
       const imageObjs = await uploadImages([coverImageData.imageFile]);
       if (imageObjs.length === 0) throw new Error('Failed to upload cover image');
@@ -1215,7 +856,6 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
       // Reload cover images after adding
       loadPublicCoverImages();
     } catch (error: any) {
-      console.error('Error adding cover image:', error);
       if (error.code === 404) {
         toast.error('Cover images collection not found. Please create it in Appwrite console first.');
       } else {
@@ -1250,7 +890,6 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
       
       toast.success('Cover image updated successfully!');
     } catch (error: any) {
-      console.error('Error updating cover image:', error);
       toast.error('Failed to update cover image: ' + (error.message || error.toString()));
     }
   };
@@ -1267,14 +906,13 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
         try {
           await storage.deleteFile(BUCKET_ID, coverImage.imageUrl.fileId);
         } catch (e) {
-          console.warn('Failed to delete cover image file from storage:', coverImage.imageUrl.fileId, e);
+          // Silently handle storage deletion errors
         }
       }
       await databases.deleteDocument(DATABASE_ID, COVER_IMAGES_COLLECTION_ID, id);
       setCoverImages(prev => prev.filter(img => img.id !== id));
       toast.success('Cover image deleted successfully!');
     } catch (error: any) {
-      console.error('Error deleting cover image:', error);
       toast.error('Failed to delete cover image: ' + (error.message || error.toString()));
     }
   };
@@ -1330,9 +968,6 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
         getProductById,
         getLowStockProducts,
         getSalesAnalytics,
-        testConnection,
-        testOrderCreation,
-        debugImageUpload,
         loading,
         error,
     }}>

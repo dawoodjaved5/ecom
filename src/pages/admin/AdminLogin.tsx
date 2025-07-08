@@ -28,7 +28,7 @@ const AdminLogin = () => {
         }
       } catch (error) {
         // No active session, continue with normal login flow
-        console.log('No existing session found');
+  
       } finally {
         setCheckingSession(false);
       }

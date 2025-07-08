@@ -52,7 +52,7 @@ const CoverImageManager = () => {
       setIsAddDialogOpen(false);
       resetForm();
     } catch (error) {
-      console.error('Error adding cover image:', error);
+      // Handle error silently
     }
   };
 
@@ -65,7 +65,7 @@ const CoverImageManager = () => {
       setEditingImage(null);
       resetForm();
     } catch (error) {
-      console.error('Error updating cover image:', error);
+      // Handle error silently
     }
   };
 
@@ -73,9 +73,9 @@ const CoverImageManager = () => {
     if (confirm('Are you sure you want to delete this cover image?')) {
       try {
         await deleteCoverImage(id);
-      } catch (error) {
-        console.error('Error deleting cover image:', error);
-      }
+          } catch (error) {
+      // Handle error silently
+    }
     }
   };
 
@@ -90,20 +90,7 @@ const CoverImageManager = () => {
     setIsEditDialogOpen(true);
   };
 
-  // Debug information
-  console.log('=== CoverImageManager Component Debug ===');
-  console.log('Cover Images Debug:', {
-    coverImagesCount: coverImages.length,
-    loading,
-    error,
-    coverImages,
-    timestamp: new Date().toISOString()
-  });
-  
-  // Test if component is even rendering
-  React.useEffect(() => {
-    console.log('CoverImageManager component mounted!');
-  }, []);
+
 
   if (loading) {
     return (
@@ -233,11 +220,11 @@ const CoverImageManager = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {coverImages.map((image) => (
           <Card key={image.id} className="overflow-hidden">
-            <div className="aspect-video relative">
+            <div className="aspect-video relative bg-gray-100">
               <img
                 src={image.imageUrl}
                 alt={image.title || `${image.category} cover`}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-contain"
               />
               <div className="absolute top-2 right-2 flex gap-1">
                 <Badge variant={image.isActive ? "default" : "secondary"}>

@@ -13,8 +13,7 @@ const CartDrawer = () => {
 
   const total = cart.reduce((sum, item) => sum + (parseFloat(item.price.toString().replace(/[^\d.]/g, "")) * item.quantity), 0);
   
-  console.log('CartDrawer - cart items:', cart);
-  console.log('CartDrawer - total:', total);
+
 
   return (
     <Sheet open={isCartOpen} onOpenChange={setCartOpen}>
@@ -57,7 +56,6 @@ const CartDrawer = () => {
             <Button 
               className="w-full mb-2" 
               onClick={() => {
-                console.log('🛒 Proceed to Checkout clicked!');
                 setCheckoutOpen(true);
               }}
             >

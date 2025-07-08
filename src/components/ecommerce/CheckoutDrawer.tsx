@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { toast } from "sonner";
+import { CheckCircle, ShoppingBag } from "lucide-react";
 
 const CheckoutDrawer = ({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) => {
   const { cart, clearCart, getCartTotal } = useCart();
@@ -26,12 +27,9 @@ const CheckoutDrawer = ({ open, onOpenChange }: { open: boolean; onOpenChange: (
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('🚀 CHECKOUT FORM SUBMITTED!');
-    console.log('Form data:', form);
     
     if (!form.name || !form.email || !form.address || !form.phone) {
       setError("Please fill in all fields.");
-      console.log('❌ Form validation failed - missing fields');
       return;
     }
     
@@ -65,37 +63,37 @@ const CheckoutDrawer = ({ open, onOpenChange }: { open: boolean; onOpenChange: (
         createdAt: new Date(),
       };
 
-      console.log('Submitting order:', orderData);
-      console.log('Cart items:', cart);
-      console.log('Total amount:', total);
-      
       // Save order to database
-      console.log('Calling addOrder function...');
       await addOrder(orderData);
-      console.log('Order saved successfully!');
       
       // Show success and clear cart
       setSubmitted(true);
       clearCart();
-      toast.success('Order placed successfully!');
+      
+      // Show enhanced success toast
+      toast.success("🎉 Order Placed Successfully!", {
+        description: `Thank you for your order! Your order total was $${total.toFixed(2)}. We'll send you a confirmation email shortly.`,
+        duration: 5000,
+        action: {
+          label: "Continue Shopping",
+          onClick: () => window.location.href = "/"
+        }
+      });
       
       // Reset form after delay
       setTimeout(() => {
         onOpenChange(false);
         setSubmitted(false);
         setForm({ name: "", email: "", address: "", phone: "", payment: "cash" });
-      }, 2000);
+      }, 3000);
       
     } catch (err: any) {
-      console.error('Order submission failed:', err);
       setError('Failed to place order. Please try again.');
       toast.error('Failed to place order. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
   };
-
-  console.log('CheckoutDrawer rendering - open:', open, 'cart items:', cart.length);
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -104,9 +102,28 @@ const CheckoutDrawer = ({ open, onOpenChange }: { open: boolean; onOpenChange: (
           <h2 className="text-2xl font-bold mb-6">Checkout</h2>
           {submitted ? (
             <div className="text-center py-16">
-              <div className="text-3xl mb-4">🎉</div>
-              <div className="text-lg font-semibold mb-2">Order placed successfully!</div>
-              <div className="text-gray-500">Thank you for shopping with us.</div>
+              <div className="flex justify-center mb-6">
+                <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center">
+                  <CheckCircle className="w-12 h-12 text-green-600" />
+                </div>
+              </div>
+              <div className="text-2xl font-bold text-green-600 mb-4">Order Placed Successfully!</div>
+              <div className="text-gray-600 mb-6">Thank you for shopping with us.</div>
+              <div className="bg-green-50 rounded-lg p-4 mb-6">
+                <div className="text-sm text-green-800">
+                  <div className="font-semibold mb-2">Order Details:</div>
+                  <div>Total: ${total.toFixed(2)}</div>
+                  <div>Items: {cart.length}</div>
+                  <div className="mt-2 text-xs">We'll send you a confirmation email shortly.</div>
+                </div>
+              </div>
+              <Button 
+                onClick={() => window.location.href = "/"}
+                className="w-full bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700"
+              >
+                <ShoppingBag className="w-4 h-4 mr-2" />
+                Continue Shopping
+              </Button>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -185,7 +202,7 @@ const CheckoutDrawer = ({ open, onOpenChange }: { open: boolean; onOpenChange: (
               
               <Button 
                 type="submit" 
-                className="w-full" 
+                className="w-full bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700" 
                 disabled={isSubmitting || cart.length === 0}
               >
                 {isSubmitting ? "Placing Order..." : `Place Order - $${total.toFixed(2)}`}

@@ -22,7 +22,7 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
 const ProductManagement = () => {
-  const { products, addProduct, updateProduct, deleteProduct, restockProduct, testConnection, debugImageUpload } = useAdmin();
+  const { products, addProduct, updateProduct, deleteProduct, restockProduct } = useAdmin();
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
@@ -76,21 +76,15 @@ const ProductManagement = () => {
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    console.log('=== IMAGE UPLOAD HANDLER ===');
-    console.log('Files selected:', files);
-    console.log('Files length:', files?.length);
     
     if (files && files.length > 0) {
       const fileArray = Array.from(files);
-      console.log('File array:', fileArray.map(f => ({ name: f.name, size: f.size, type: f.type })));
       
       // Add new files to existing imageFiles (don't replace)
       setImageFiles(prev => [...prev, ...fileArray]);
       
       // For preview - create object URLs
       const newImages = fileArray.map(file => URL.createObjectURL(file));
-      console.log('Preview URLs created:', newImages);
-      console.log('Total images will be:', [...(formData.images || []), ...newImages].length);
       
       // Add new preview URLs to existing images
       setFormData(prev => ({ 
@@ -130,7 +124,6 @@ const ProductManagement = () => {
   };
 
   const resetForm = () => {
-    console.log('=== RESETTING FORM ===');
     setFormData({
       title: "",
       category: "",
@@ -150,7 +143,6 @@ const ProductManagement = () => {
       isActive: true,
     });
     setImageFiles([]);
-    console.log('Form and imageFiles cleared');
     setEditingProduct(null);
   };
 
@@ -158,11 +150,6 @@ const ProductManagement = () => {
     e.preventDefault();
     setError(null);
     setIsSubmitting(true);
-    
-    console.log('=== FORM SUBMISSION ===');
-    console.log('ImageFiles state:', imageFiles);
-    console.log('ImageFiles length:', imageFiles.length);
-    console.log('Form data images:', formData.images);
     
     try {
       if (!formData.title || !formData.category || !formData.price || !formData.quantity) {
@@ -188,9 +175,6 @@ const ProductManagement = () => {
         isActive: formData.isActive,
         imageFiles: imageFiles.length > 0 ? imageFiles : undefined,
       };
-      
-      console.log('Product data being sent:', productData);
-      console.log('ImageFiles being sent:', productData.imageFiles);
       if (editingProduct) {
         await updateProduct(editingProduct.id, productData);
       } else {
@@ -309,12 +293,6 @@ const ProductManagement = () => {
             </div>
           </div>
           <div className="flex gap-3">
-            <Button onClick={() => testConnection()} variant="outline">
-              Test Connection
-            </Button>
-            <Button onClick={() => debugImageUpload()} variant="outline">
-              Debug Image Upload
-            </Button>
             <Button onClick={() => setShowAddForm(true)}>
               <Plus className="h-4 w-4 mr-2" />
               Add Product
@@ -521,11 +499,13 @@ const ProductManagement = () => {
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         {formData.images.map((image, index) => (
                           <div key={index} className="relative">
-                            <img
-                              src={image}
-                              alt={`Product ${index + 1}`}
-                              className="w-full h-24 object-cover rounded-lg"
-                            />
+                            <div className="w-full h-24 bg-gray-100 flex items-center justify-center rounded-lg">
+                              <img
+                                src={image}
+                                alt={`Product ${index + 1}`}
+                                className="w-full h-full object-contain rounded-lg"
+                              />
+                            </div>
                             <button
                               type="button"
                               onClick={() => removeImage(index)}
@@ -693,15 +673,17 @@ const ProductManagement = () => {
             <p className="text-gray-500">Try adding a new product.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {products.map((product) => (
               <Card key={product.id} className="overflow-hidden">
                 <div className="relative">
-                  <img
-                    src={product.images[0] || "/placeholder-product.jpg"}
-                    alt={product.title}
-                    className="w-full h-48 object-cover"
-                  />
+                  <div className="w-full h-48 bg-gray-100 flex items-center justify-center">
+                    <img
+                      src={product.images[0] || "/placeholder-product.jpg"}
+                      alt={product.title}
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
                   <div className="absolute top-2 right-2 flex space-x-1">
                     <Button
                       size="sm"
