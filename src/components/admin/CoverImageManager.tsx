@@ -73,9 +73,9 @@ const CoverImageManager = () => {
     if (confirm('Are you sure you want to delete this cover image?')) {
       try {
         await deleteCoverImage(id);
-          } catch (error) {
-      // Handle error silently
-    }
+      } catch (error) {
+        // Handle error silently
+      }
     }
   };
 
@@ -89,8 +89,6 @@ const CoverImageManager = () => {
     });
     setIsEditDialogOpen(true);
   };
-
-
 
   if (loading) {
     return (

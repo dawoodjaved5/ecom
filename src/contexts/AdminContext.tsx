@@ -179,31 +179,20 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
   // Load cover images for public access (no authentication required)
   const loadPublicCoverImages = async () => {
     try {
-      const coverRes = await databases.listDocuments(
-        DATABASE_ID,
-        COVER_IMAGES_COLLECTION_ID,
-        [Query.orderDesc('createdAt')]
-      );
-      
-      const mappedCoverImages = coverRes.documents.map((doc: any) => ({
-        id: doc.$id,
-        imageUrl: doc.imageUrl || '',
-        category: doc.category || 'men',
-        title: doc.title || '',
-        description: doc.description || '',
-        isActive: doc.isActive !== false,
-        createdAt: new Date(doc.$createdAt || Date.now())
+      const fileList = await storage.listFiles(BUCKET_ID);
+      // Only use files with 'cover-' prefix
+      const coverFiles = fileList.files.filter((file: any) => file.name.startsWith('cover-'));
+      const mappedCoverImages = coverFiles.map((file: any) => ({
+        id: file.$id,
+        imageUrl: storage.getFileView(BUCKET_ID, file.$id).toString(),
+        category: 'men', // Default, since we don't have metadata
+        title: '',
+        description: '',
+        isActive: true,
+        createdAt: new Date(file.$createdAt || Date.now()),
       }));
-      
-      setCoverImages(mappedCoverImages);
       setCoverImages(mappedCoverImages);
     } catch (error: any) {
-      if (error.code === 404) {
-        toast.error('Cover images collection not found. Please create it in Appwrite console.');
-      } else if (error.code === 401) {
-        toast.error('Permission denied for cover images collection.');
-      }
-      
       setCoverImages([]);
     }
   };
@@ -396,11 +385,14 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
   };
 
   // Upload images to Appwrite Storage
-  const uploadImages = async (files: File[]): Promise<{ fileId: string; url: string }[]> => {
+  const uploadImages = async (files: File[], prefix?: string): Promise<{ fileId: string; url: string }[]> => {
     const uploaded: { fileId: string; url: string }[] = [];
-    
     for (let i = 0; i < files.length; i++) {
-      const file = files[i];
+      let file = files[i];
+      if (prefix) {
+        // Create a new File object with the prefix in the name
+        file = new File([file], `${prefix}${file.name}`, { type: file.type });
+      }
       try {
         // Check if file is valid
         if (!file || file.size === 0) {
@@ -817,50 +809,31 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
       toast.error('Please login first');
       return;
     }
-
     try {
-      // Upload image
-      const imageObjs = await uploadImages([coverImageData.imageFile]);
+      const imageObjs = await uploadImages([coverImageData.imageFile], 'cover-');
       if (imageObjs.length === 0) throw new Error('Failed to upload cover image');
-
-      // Create cover image document
       const docData = {
-        imageUrl: typeof imageObjs[0] === 'string' ? imageObjs[0] : imageObjs[0].url,
+        imageUrl: imageObjs[0].url,
+        fileId: imageObjs[0].fileId,
         category: coverImageData.category,
         title: coverImageData.title || '',
         description: coverImageData.description || '',
         isActive: coverImageData.isActive,
         createdAt: new Date().toISOString(),
       };
-
-      const res = await databases.createDocument(
-        DATABASE_ID,
-        COVER_IMAGES_COLLECTION_ID,
-        ID.unique(),
-        docData
-      );
-
-      const newCoverImage: CoverImage = {
-        id: res.$id,
-        imageUrl: typeof imageObjs[0] === 'string' ? imageObjs[0] : imageObjs[0].url,
+      // Store cover image metadata in a local array or collection as needed
+      setCoverImages(prev => [{
+        id: imageObjs[0].fileId,
+        imageUrl: imageObjs[0].url,
         category: coverImageData.category,
         title: coverImageData.title || '',
         description: coverImageData.description || '',
         isActive: coverImageData.isActive,
-        createdAt: new Date(res.$createdAt),
-      };
-
-      setCoverImages(prev => [newCoverImage, ...prev]);
+        createdAt: new Date(),
+      }, ...prev]);
       toast.success('Cover image added successfully!');
-      
-      // Reload cover images after adding
-      loadPublicCoverImages();
     } catch (error: any) {
-      if (error.code === 404) {
-        toast.error('Cover images collection not found. Please create it in Appwrite console first.');
-      } else {
-        toast.error('Failed to add cover image: ' + (error.message || error.toString()));
-      }
+      toast.error('Failed to add cover image: ' + (error.message || error.toString()));
     }
   };
 
@@ -899,17 +872,13 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
       toast.error('Please login first');
       return;
     }
-
     try {
       const coverImage = coverImages.find(img => img.id === id);
-      if (coverImage && coverImage.imageUrl && coverImage.imageUrl.fileId) {
+      if (coverImage && coverImage.id) {
         try {
-          await storage.deleteFile(BUCKET_ID, coverImage.imageUrl.fileId);
-        } catch (e) {
-          // Silently handle storage deletion errors
-        }
+          await storage.deleteFile(BUCKET_ID, coverImage.id);
+        } catch (e) {}
       }
-      await databases.deleteDocument(DATABASE_ID, COVER_IMAGES_COLLECTION_ID, id);
       setCoverImages(prev => prev.filter(img => img.id !== id));
       toast.success('Cover image deleted successfully!');
     } catch (error: any) {
