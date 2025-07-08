@@ -22,6 +22,7 @@ const ShoesCategory = () => {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [quickViewProduct, setQuickViewProduct] = useState<AdminProduct | null>(null);
   const [sortBy, setSortBy] = useState('featured');
+  const [isCartOpen, setIsCartOpen] = useState(false);
 
   const { products } = useAdmin();
   const { addToCart } = useCart();
@@ -170,7 +171,7 @@ const ShoesCategory = () => {
           open={!!quickViewProduct}
           onOpenChange={(open) => !open && setQuickViewProduct(null)}
         />
-        <CartDrawer />
+        <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
         <EnhancedFooter />
       </div>
     </CartDrawerProvider>

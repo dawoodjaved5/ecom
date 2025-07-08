@@ -77,8 +77,7 @@ const ProductDetail = () => {
       image: getCurrentImageUrl(),
       size: selectedSize,
       color: selectedColor,
-      quantity: quantity,
-      maxQuantity: availableQuantity
+      availableQuantity: availableQuantity
     });
     
     toast.success("Added to cart!");

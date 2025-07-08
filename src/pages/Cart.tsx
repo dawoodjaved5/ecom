@@ -1,15 +1,15 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Minus, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, Minus, Plus, Trash2, ShoppingBag } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useCart } from "@/components/ecommerce/CartContext";
 
 const Cart = () => {
-  const { state, updateQuantity, removeFromCart } = useCart();
+  const { cart, updateQuantity, removeFromCart, getCartTotal, getCartItemCount } = useCart();
   const navigate = useNavigate();
 
-  if (state.items.length === 0) {
+  if (cart.length === 0) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -45,7 +45,7 @@ const Cart = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Cart Items */}
           <div className="lg:col-span-2 space-y-4">
-            {state.items.map((item) => (
+            {cart.map((item) => (
               <Card key={`${item.id}-${item.size}`} className="overflow-hidden">
                 <CardContent className="p-6">
                   <div className="flex gap-4">
@@ -56,15 +56,13 @@ const Cart = () => {
                     />
                     <div className="flex-1">
                       <h3 className="font-semibold text-lg">{item.title}</h3>
-                      <p className="text-gray-600">{item.category}</p>
+                      {/* Category is not available on CartItem */}
                       {item.size && (
                         <p className="text-sm text-gray-500">Size: {item.size.toUpperCase()}</p>
                       )}
                       <div className="flex items-center gap-2 mt-2">
                         <span className="font-bold">{item.price}</span>
-                        {item.originalPrice && (
-                          <span className="text-gray-500 line-through text-sm">{item.originalPrice}</span>
-                        )}
+                        {/* originalPrice is not available on CartItem */}
                       </div>
                     </div>
                     <div className="flex flex-col items-end gap-4">
@@ -110,8 +108,8 @@ const Cart = () => {
                 
                 <div className="space-y-3 mb-6">
                   <div className="flex justify-between">
-                    <span>Subtotal ({state.itemCount} items)</span>
-                    <span>${state.total.toFixed(2)}</span>
+                    <span>Subtotal ({getCartItemCount()} items)</span>
+                    <span>${getCartTotal().toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Shipping</span>
@@ -119,12 +117,12 @@ const Cart = () => {
                   </div>
                   <div className="flex justify-between">
                     <span>Tax</span>
-                    <span>${(state.total * 0.08).toFixed(2)}</span>
+                    <span>${(getCartTotal() * 0.08).toFixed(2)}</span>
                   </div>
                   <hr />
                   <div className="flex justify-between font-bold text-lg">
                     <span>Total</span>
-                    <span>${(state.total * 1.08).toFixed(2)}</span>
+                    <span>${(getCartTotal() * 1.08).toFixed(2)}</span>
                   </div>
                 </div>
 

@@ -4,23 +4,27 @@ import { Sheet, SheetTrigger, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import CheckoutDrawer from "@/components/ecommerce/CheckoutDrawer";
-import { useCartDrawer } from "@/components/ecommerce/FloatingCartButton";
 
-const CartDrawer = () => {
+// Add props interface
+interface CartDrawerProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+// Update component to accept props
+const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
   const { cart, removeFromCart, updateQuantity, clearCart } = useCart();
-  const { isCartOpen, setCartOpen } = useCartDrawer();
   const [checkoutOpen, setCheckoutOpen] = useState(false);
 
   const total = cart.reduce((sum, item) => sum + (parseFloat(item.price.toString().replace(/[^\d.]/g, "")) * item.quantity), 0);
   
 
-
   return (
-    <Sheet open={isCartOpen} onOpenChange={setCartOpen}>
+    <Sheet open={isOpen} onOpenChange={onClose}>
       <SheetContent side="right" className="w-full max-w-md p-0">
         <div className="flex items-center justify-between p-4 border-b">
           <h2 className="text-xl font-bold">Your Cart</h2>
-          <Button variant="ghost" size="icon" onClick={() => setCartOpen(false)}>
+          <Button variant="ghost" size="icon" onClick={onClose}>
             <X />
           </Button>
         </div>

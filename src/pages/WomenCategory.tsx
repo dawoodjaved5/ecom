@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import ProductCard from '../components/ecommerce/ProductCard';
 import SearchBar from '../components/ecommerce/SearchBar';
 import { useCart } from '@/components/ecommerce/CartContext';
-import CartDrawer from '../components/ecommerce/CartDrawer';
+import CartDrawer from '@/components/ecommerce/CartDrawer';
 import Header from '@/components/ecommerce/Header';
 import FloatingCartButton, { CartDrawerProvider } from '@/components/ecommerce/FloatingCartButton';
 import ProductQuickView from '@/components/ecommerce/ProductQuickView';
@@ -22,6 +22,7 @@ const WomenCategory = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [quickViewProduct, setQuickViewProduct] = useState<AdminProduct | null>(null);
   const [sortBy, setSortBy] = useState('featured');
+  const [isCartOpen, setIsCartOpen] = useState(false);
 
   const { products } = useAdmin();
   const { addToCart } = useCart();
@@ -177,7 +178,7 @@ const WomenCategory = () => {
           open={!!quickViewProduct}
           onOpenChange={(open) => !open && setQuickViewProduct(null)}
         />
-        <CartDrawer />
+        <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
         <EnhancedFooter />
       </div>
     </CartDrawerProvider>

@@ -42,7 +42,7 @@ export const useCart = () => {
 
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [cart, setCart] = useState<CartItem[]>([]);
-  const { addOrder, updateProductQuantities } = useAdmin();
+  const { addOrder } = useAdmin();
 
   const addToCart = (item: Omit<CartItem, 'quantity'>) => {
     // Check if item is out of stock
@@ -121,6 +121,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
     try {
       const order = {
+        id: Date.now().toString(),
         customerName: formData.customerName,
         customerEmail: formData.customerEmail,
         customerPhone: formData.customerPhone,
@@ -134,16 +135,13 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
           color: item.color,
         })),
         total: getCartTotal(),
-        status: 'pending',
+        status: 'pending' as const,
         paymentMethod: formData.paymentMethod === 'cash' ? 'Cash on Delivery' : formData.paymentMethod,
         createdAt: new Date(),
       };
       
       // Save order to database
       await addOrder(order);
-      
-      // Update product quantities
-      await updateProductQuantities(order.items);
       
       // Clear the cart
       clearCart();

@@ -163,7 +163,7 @@ const ProductManagement = () => {
         price: parseFloat(formData.price),
         originalPrice: formData.originalPrice ? parseFloat(formData.originalPrice) : undefined,
         description: formData.description,
-        images: formData.images, // Preserve existing images when editing
+        images: formData.images.map(url => typeof url === 'string' ? { fileId: '', url } : url),
         sizes: formData.sizes,
         colors: formData.colors,
         quantity: parseInt(formData.quantity),
@@ -211,7 +211,7 @@ const ProductManagement = () => {
       price: product.price.toString(),
       originalPrice: product.originalPrice?.toString() || "",
       description: product.description,
-      images: product.images,
+      images: product.images.map(image => image.url),
       sizes: product.sizes,
       colors: product.colors,
       quantity: product.quantity.toString(),
@@ -679,7 +679,7 @@ const ProductManagement = () => {
                 <div className="relative">
                   <div className="w-full h-48 bg-gray-100 flex items-center justify-center">
                     <img
-                      src={product.images[0] || "/placeholder-product.jpg"}
+                      src={product.images[0]?.url || "/placeholder-product.jpg"}
                       alt={product.title}
                       className="w-full h-full object-contain"
                     />

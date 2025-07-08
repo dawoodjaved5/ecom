@@ -14,6 +14,7 @@ interface Product {
   image: string;
   size?: string[];
   priceValue: number;
+  availableQuantity?: number;
 }
 
 interface AddToCartModalProps {
@@ -39,7 +40,10 @@ const AddToCartModal = ({ isOpen, onClose, product }: AddToCartModalProps) => {
 
     addToCart({
       ...product,
+      id: String(product.id),
+      price: Number(product.price),
       size: selectedSize || undefined,
+      availableQuantity: product.availableQuantity ?? 1
     });
 
     toast({

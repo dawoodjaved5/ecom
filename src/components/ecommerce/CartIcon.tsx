@@ -5,7 +5,7 @@ import { useCart } from "@/components/ecommerce/CartContext";
 import { useNavigate } from 'react-router-dom';
 
 const CartIcon = () => {
-  const { state } = useCart();
+  const { cart, getCartItemCount } = useCart();
   const navigate = useNavigate();
 
   return (
@@ -16,9 +16,9 @@ const CartIcon = () => {
       onClick={() => navigate('/cart')}
     >
       <ShoppingBag size={20} />
-      {state.itemCount > 0 && (
+      {getCartItemCount() > 0 && (
         <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-          {state.itemCount}
+          {getCartItemCount()}
         </span>
       )}
     </Button>

@@ -4,7 +4,7 @@ import { Heart, ShoppingBag, ChevronLeft, ChevronRight, X, Sparkles } from "luci
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useCart } from "@/components/ecommerce/CartContext";
-import { isVariantAvailable, getVariantQuantity } from "@/contexts/AdminContext";
+import { isVariantAvailable, getVariantQuantity, AdminProduct } from "@/contexts/AdminContext";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
@@ -107,9 +107,9 @@ const ProductCard = ({ product }: ProductCardProps) => {
 
     // Add to cart
     addToCart({
-      id: product.id,
+      id: String(product.id),
       title: product.title,
-      price: product.price,
+      price: Number(product.price),
       image: getCurrentImageUrl(),
       size: selectedSize,
       color: selectedColor,

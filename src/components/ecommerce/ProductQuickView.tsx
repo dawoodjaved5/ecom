@@ -50,10 +50,10 @@ const ProductQuickView = ({ product, open, onOpenChange }: ProductQuickViewProps
     }
 
     addToCart({
-      id: product.id,
+      id: String(product.id),
       title: product.title,
-      price: product.price,
-      image: product.images[0] || "/placeholder-product.jpg",
+      price: Number(product.price),
+      image: typeof product.images[0] === 'string' ? product.images[0] : (product.images[0]?.url || "/placeholder-product.jpg"),
       size: selectedSize,
       color: selectedColor,
       availableQuantity: getVariantQuantity(product, selectedSize, selectedColor),
@@ -81,7 +81,7 @@ const ProductQuickView = ({ product, open, onOpenChange }: ProductQuickViewProps
             <div className="relative">
               <div className="w-full h-96 bg-gray-100 flex items-center justify-center rounded-lg">
                 <img
-                  src={product.images[0] || "/placeholder-product.jpg"}
+                  src={typeof product.images[0] === 'string' ? product.images[0] : (product.images[0]?.url || "/placeholder-product.jpg")}
                   alt={product.title}
                   className="w-full h-full object-contain rounded-lg"
                 />
